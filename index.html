@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#14171C">
-<title>Ledger — Routine Quest</title>
+<meta name="theme-color" content="#D6E9FB">
+<title>Dev's App</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -12,17 +12,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
   :root{
-    --ink:#14171C;
-    --panel:#1C2029;
-    --panel-2:#242934;
-    --gold:#D4A72C;
-    --gold-dim:#8A7024;
-    --green:#4C9A6B;
-    --red:#B5544A;
-    --blue:#5B8DBF;
-    --text:#EDEFF3;
-    --text-dim:#8B93A3;
-    --line:#2C313D;
+    --ink:#D6E9FB;
+    --panel:#FFFFFF;
+    --panel-2:#E7F2FC;
+    --gold:#0077FF;
+    --gold-dim:#86B9F7;
+    --green:#3F9469;
+    --red:#C1493E;
+    --blue:#7C5CBF;
+    --text:#16324F;
+    --text-dim:#5C7A99;
+    --line:#BFDBF7;
     --radius:14px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
@@ -56,7 +56,7 @@
     color:var(--gold); padding:8px 14px; border-radius:999px; font-size:13px;
     font-family:inherit; cursor:pointer;
   }
-  .redeem-btn:active{background:rgba(212,167,44,0.1);}
+  .redeem-btn:active{background:rgba(0,119,255,0.1);}
 
   main{padding:20px;}
   .section-title{
@@ -107,7 +107,7 @@
 
   .fab{
     position:fixed; right:20px; bottom:96px; width:56px;height:56px; border-radius:50%;
-    background:var(--gold); color:#14171C; border:none; font-size:28px;
+    background:var(--gold); color:#FFFFFF; border:none; font-size:28px;
     box-shadow:0 6px 18px rgba(0,0,0,0.4); cursor:pointer; z-index:20;
   }
 
@@ -150,7 +150,7 @@
   .field-row .field{flex:1;}
   .modal-actions{ display:flex; gap:10px; margin-top:18px; }
   .btn{ flex:1; padding:12px; border-radius:10px; border:none; font-size:14.5px; font-weight:600; font-family:inherit; cursor:pointer; }
-  .btn-primary{background:var(--gold); color:#14171C;}
+  .btn-primary{background:var(--gold); color:#FFFFFF;}
   .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--text);}
   .btn-danger{background:transparent; border:1px solid var(--red); color:var(--red);}
 
@@ -205,14 +205,14 @@
   .reader-title{ flex:1; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .reader-body{
     flex:1; overflow:auto; position:relative; display:flex; align-items:flex-start; justify-content:center;
-    background:#0D0F13; padding:16px;
+    background:#C9E0F7; padding:16px;
   }
   .page-wrap{
     position:relative; background:#fff; box-shadow:0 6px 30px rgba(0,0,0,0.5);
     transition:opacity 0.18s ease; max-width:100%;
   }
   .docx-page{
-    background:#fff; color:#14171C; padding:28px 22px; width:100%; max-width:640px;
+    background:#fff; color:#16324F; padding:28px 22px; width:100%; max-width:640px;
     font-family:Georgia,serif; font-size:15px; line-height:1.6; min-height:60vh;
     border-radius:4px;
   }
@@ -225,7 +225,7 @@
     color:transparent; position:absolute; white-space:pre; transform-origin:0% 0%;
     cursor:text;
   }
-  .text-layer mark{ background:rgba(212,167,44,0.55); }
+  .text-layer mark{ background:rgba(0,119,255,0.35); }
   .reader-navzone{ position:absolute; top:0; bottom:0; width:30%; z-index:5; }
   .reader-navzone.left{left:0;} .reader-navzone.right{right:0;}
   .reader-bottombar{
@@ -380,9 +380,9 @@
     <button class="reader-toolbtn" id="prevPageBtn">‹ Prev</button>
     <div class="page-indicator" id="pageIndicator">–</div>
     <div class="highlight-swatches">
-      <div class="swatch" style="background:#D4A72C" data-color="rgba(212,167,44,0.55)"></div>
+      <div class="swatch" style="background:#0077FF" data-color="rgba(0,119,255,0.35)"></div>
       <div class="swatch" style="background:#4C9A6B" data-color="rgba(76,154,107,0.55)"></div>
-      <div class="swatch" style="background:#5B8DBF" data-color="rgba(91,141,191,0.55)"></div>
+      <div class="swatch" style="background:#7C5CBF" data-color="rgba(124,92,191,0.4)"></div>
     </div>
     <button class="reader-toolbtn" id="nextPageBtn">Next ›</button>
   </div>

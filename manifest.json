@@ -1,6 +1,6 @@
 {
-  "name": "Ledger — Routine Quest",
-  "short_name": "Ledger",
+  "name": "Dev's App",
+  "short_name": "Dev's App",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#14171C",
