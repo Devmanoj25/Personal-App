@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14171C">
+<title>Ledger — Routine Quest</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  :root{
+    --ink:#14171C;
+    --panel:#1C2029;
+    --panel-2:#242934;
+    --gold:#D4A72C;
+    --gold-dim:#8A7024;
+    --green:#4C9A6B;
+    --red:#B5544A;
+    --blue:#5B8DBF;
+    --text:#EDEFF3;
+    --text-dim:#8B93A3;
+    --line:#2C313D;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh;
+    padding-bottom:84px;
+    overscroll-behavior-y:none;
+  }
+  h1,h2,h3,.serif{
+    font-family:"Spectral","Iowan Old Style",Georgia,serif;
+    font-weight:600;
+    letter-spacing:0.01em;
+  }
+  header.top{
+    padding:22px 20px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{ color:var(--text-dim); font-size:13px; margin:0 0 4px; }
+  .balance-row{ display:flex; align-items:baseline; gap:10px; margin-top:6px; }
+  .balance-amount{
+    font-size:44px; font-family:"Spectral",Georgia,serif; font-weight:600;
+    color:var(--gold); line-height:1;
+  }
+  .balance-sub{ font-size:13px; color:var(--text-dim); }
+  .redeem-btn{
+    margin-top:14px; background:transparent; border:1px solid var(--gold-dim);
+    color:var(--gold); padding:8px 14px; border-radius:999px; font-size:13px;
+    font-family:inherit; cursor:pointer;
+  }
+  .redeem-btn:active{background:rgba(212,167,44,0.1);}
+
+  main{padding:20px;}
+  .section-title{
+    font-size:20px; margin:18px 0 12px; display:flex; align-items:center;
+    justify-content:space-between; gap:10px;
+  }
+  .date-label{ color:var(--text-dim); font-size:13px; font-weight:400; font-family:"Inter",sans-serif; }
+  .small-add-btn{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--gold);
+    padding:7px 12px; border-radius:999px; font-size:13px; font-family:inherit; cursor:pointer;
+    white-space:nowrap;
+  }
+
+  .task-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; gap:12px;
+  }
+  .task-card.done{ opacity:0.55; }
+  .task-info{flex:1; min-width:0;}
+  .task-name{
+    font-size:15px; font-weight:600; margin:0 0 3px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .task-meta{ font-size:12.5px; color:var(--text-dim); display:flex; gap:8px; flex-wrap:wrap; }
+  .tag{ background:var(--panel-2); border-radius:6px; padding:2px 7px; font-size:11.5px; }
+  .points-chip{ color:var(--gold); font-weight:600; white-space:nowrap; }
+  .task-action{ flex-shrink:0; display:flex; gap:6px; align-items:center; }
+  .btn-complete{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    width:38px;height:38px; border-radius:50%; font-size:18px; cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .btn-complete.checked{ background:var(--green); border-color:var(--green); color:#fff; }
+  .btn-timer{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    padding:8px 12px; border-radius:999px; font-size:12.5px; cursor:pointer;
+    font-family:inherit; white-space:nowrap;
+  }
+  .icon-btn{
+    background:transparent; border:none; color:var(--text-dim); font-size:16px;
+    cursor:pointer; padding:4px 6px;
+  }
+
+  .empty-state{
+    color:var(--text-dim); font-size:14px; padding:30px 10px; text-align:center;
+    border:1px dashed var(--line); border-radius:var(--radius);
+  }
+
+  .fab{
+    position:fixed; right:20px; bottom:96px; width:56px;height:56px; border-radius:50%;
+    background:var(--gold); color:#14171C; border:none; font-size:28px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.4); cursor:pointer; z-index:20;
+  }
+
+  nav.tabbar{
+    position:fixed; bottom:0;left:0;right:0; background:var(--panel);
+    border-top:1px solid var(--line); display:flex;
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom)); z-index:20;
+  }
+  nav.tabbar button{
+    flex:1; background:none; border:none; color:var(--text-dim); font-family:inherit;
+    font-size:11.5px; padding:6px 2px; cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; gap:4px;
+  }
+  nav.tabbar button .ic{font-size:19px;}
+  nav.tabbar button.active{color:var(--gold);}
+
+  .soon-panel{ text-align:center; padding:60px 20px; color:var(--text-dim); }
+  .soon-panel .serif{font-size:19px;color:var(--text);margin-bottom:8px;}
+
+  /* Modal */
+  .modal-backdrop{
+    position:fixed;inset:0; background:rgba(0,0,0,0.55); display:none;
+    align-items:flex-end; z-index:50;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{
+    background:var(--panel); width:100%; border-radius:20px 20px 0 0;
+    padding:22px 20px calc(24px + env(safe-area-inset-bottom)); border-top:1px solid var(--line);
+    max-height:85vh; overflow-y:auto;
+  }
+  .modal h3{margin:0 0 16px;}
+  .field{margin-bottom:14px;}
+  .field label{ display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:6px; }
+  .field input, .field select, .field textarea{
+    width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    padding:11px 12px; border-radius:10px; font-size:15px; font-family:inherit;
+  }
+  .field textarea{ resize:vertical; min-height:70px; }
+  .field-row{display:flex; gap:10px;}
+  .field-row .field{flex:1;}
+  .modal-actions{ display:flex; gap:10px; margin-top:18px; }
+  .btn{ flex:1; padding:12px; border-radius:10px; border:none; font-size:14.5px; font-weight:600; font-family:inherit; cursor:pointer; }
+  .btn-primary{background:var(--gold); color:#14171C;}
+  .btn-ghost{background:transparent; border:1px solid var(--line); color:var(--text);}
+  .btn-danger{background:transparent; border:1px solid var(--red); color:var(--red);}
+
+  /* Timer overlay */
+  .timer-overlay{
+    position:fixed;inset:0; background:var(--ink); display:none; flex-direction:column;
+    align-items:center; justify-content:center; z-index:60; padding:20px; text-align:center;
+  }
+  .timer-overlay.open{display:flex;}
+  .timer-overlay .task-name{font-size:20px;}
+  .timer-clock{
+    font-family:"Spectral",Georgia,serif; font-size:72px; color:var(--gold);
+    margin:24px 0; font-variant-numeric:tabular-nums;
+  }
+  .timer-overlay .btn{max-width:200px;}
+
+  #toast{
+    position:fixed; top:16px;left:50%; transform:translateX(-50%) translateY(-60px);
+    background:var(--green); color:#fff; padding:10px 18px; border-radius:999px;
+    font-size:13.5px; z-index:80; transition:transform 0.25s ease;
+  }
+  #toast.show{transform:translateX(-50%) translateY(0);}
+
+  /* Reading library */
+  .doc-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 16px; margin-bottom:10px; display:flex; gap:12px; align-items:center; cursor:pointer;
+  }
+  .doc-icon{
+    width:40px;height:40px; border-radius:10px; background:var(--panel-2);
+    display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;
+    color:var(--gold); border:1px solid var(--line);
+  }
+  .doc-info{flex:1; min-width:0;}
+  .doc-title{
+    font-size:15px; font-weight:600; margin:0 0 6px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .progress-track{ background:var(--panel-2); border-radius:999px; height:6px; overflow:hidden; }
+  .progress-fill{ background:var(--gold); height:100%; }
+  .doc-sub{ font-size:11.5px; color:var(--text-dim); margin-top:5px; }
+
+  /* Reader */
+  .reader-overlay{
+    position:fixed; inset:0; background:var(--ink); display:none; flex-direction:column; z-index:70;
+  }
+  .reader-overlay.open{display:flex;}
+  .reader-topbar{
+    display:flex; align-items:center; gap:10px; padding:14px 16px;
+    border-bottom:1px solid var(--line); flex-shrink:0;
+  }
+  .reader-title{ flex:1; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .reader-body{
+    flex:1; overflow:auto; position:relative; display:flex; align-items:flex-start; justify-content:center;
+    background:#0D0F13; padding:16px;
+  }
+  .page-wrap{
+    position:relative; background:#fff; box-shadow:0 6px 30px rgba(0,0,0,0.5);
+    transition:opacity 0.18s ease; max-width:100%;
+  }
+  .docx-page{
+    background:#fff; color:#14171C; padding:28px 22px; width:100%; max-width:640px;
+    font-family:Georgia,serif; font-size:15px; line-height:1.6; min-height:60vh;
+    border-radius:4px;
+  }
+  .docx-page mark{ background:var(--gold); }
+  .text-layer{
+    position:absolute; top:0; left:0; overflow:hidden; line-height:1;
+    -webkit-user-select:text; user-select:text;
+  }
+  .text-layer span{
+    color:transparent; position:absolute; white-space:pre; transform-origin:0% 0%;
+    cursor:text;
+  }
+  .text-layer mark{ background:rgba(212,167,44,0.55); }
+  .reader-navzone{ position:absolute; top:0; bottom:0; width:30%; z-index:5; }
+  .reader-navzone.left{left:0;} .reader-navzone.right{right:0;}
+  .reader-bottombar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); flex-shrink:0;
+  }
+  .page-indicator{ font-size:13px; color:var(--text-dim); }
+  .reader-toolbtn{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    padding:9px 13px; border-radius:10px; font-size:13px; font-family:inherit; cursor:pointer;
+  }
+  .highlight-swatches{ display:flex; gap:8px; }
+  .swatch{ width:26px;height:26px; border-radius:50%; border:2px solid var(--line); cursor:pointer; }
+
+  /* Notes drawer */
+  .notes-drawer{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:flex-end; z-index:75;
+  }
+  .notes-drawer.open{display:flex;}
+  .notes-panel{
+    background:var(--panel); width:100%; max-height:75vh; border-radius:20px 20px 0 0;
+    padding:20px 20px calc(20px + env(safe-area-inset-bottom)); overflow-y:auto;
+  }
+  .note-item{
+    background:var(--panel-2); border-radius:10px; padding:10px 12px; margin-bottom:8px; font-size:13.5px;
+  }
+  .note-item .np{ color:var(--text-dim); font-size:11px; margin-bottom:4px; }
+  .upload-hint{ font-size:12px; color:var(--text-dim); margin:-4px 0 16px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <p class="eyebrow">Today's balance</p>
+  <div class="balance-row">
+    <div class="balance-amount" id="balanceAmount">₹0</div>
+    <div class="balance-sub">available to spend on yourself</div>
+  </div>
+  <button class="redeem-btn" id="redeemBtn">Redeem reward</button>
+</header>
+
+<main>
+  <div id="panel-tasks">
+    <div class="section-title">Today's tasks <span class="date-label" id="todayLabel"></span></div>
+    <div id="taskList"></div>
+  </div>
+
+  <div id="panel-exercise" style="display:none;">
+    <div class="section-title">
+      Workouts
+      <button class="small-add-btn" id="addWorkoutBtn">+ Add workout</button>
+    </div>
+    <div id="workoutList"></div>
+  </div>
+
+  <div id="panel-reading" style="display:none;">
+    <div class="section-title">
+      Reading vault
+      <button class="small-add-btn" id="uploadDocBtn">+ Upload</button>
+    </div>
+    <p class="upload-hint">Supports PDF and Word (.docx) files.</p>
+    <input type="file" id="fileInput" accept=".pdf,.docx" style="display:none;">
+    <div id="docList"></div>
+  </div>
+
+  <div id="panel-stats" class="soon-panel" style="display:none;">
+    <div class="serif">Stats</div>
+    Streaks and history charts — coming in a future update.
+  </div>
+</main>
+
+<button class="fab" id="addTaskFab" title="Add task">+</button>
+
+<nav class="tabbar">
+  <button class="tab-btn active" data-tab="tasks"><span class="ic">☑</span>Tasks</button>
+  <button class="tab-btn" data-tab="exercise"><span class="ic">🏃</span>Exercise</button>
+  <button class="tab-btn" data-tab="reading"><span class="ic">📖</span>Reading</button>
+  <button class="tab-btn" data-tab="stats"><span class="ic">📊</span>Stats</button>
+</nav>
+
+<!-- Add/Edit Task Modal -->
+<div class="modal-backdrop" id="taskModalBackdrop">
+  <div class="modal">
+    <h3 class="serif">New task</h3>
+    <div class="field"><label>Task name</label><input type="text" id="taskNameInput" placeholder="e.g. Read 20 pages"></div>
+    <div class="field-row">
+      <div class="field"><label>Category</label>
+        <select id="taskCategoryInput">
+          <option value="Exercise">Exercise</option>
+          <option value="Reading">Reading</option>
+          <option value="Gaming">Gaming</option>
+          <option value="Leisure">Leisure</option>
+          <option value="Other" selected>Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Reward points (₹)</label><input type="number" id="taskPointsInput" min="0" step="1" placeholder="10"></div>
+    </div>
+    <div class="field"><label>Time limit / duration (minutes) — optional</label><input type="number" id="taskDurationInput" min="0" step="1" placeholder="Leave blank for no timer"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelTaskBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveTaskBtn">Save task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Redeem Modal -->
+<div class="modal-backdrop" id="redeemModalBackdrop">
+  <div class="modal">
+    <h3 class="serif">Redeem reward</h3>
+    <div class="field"><label>Amount to redeem (₹)</label><input type="number" id="redeemAmountInput" min="1" step="1" placeholder="e.g. 100"></div>
+    <div class="field"><label>What are you rewarding yourself with?</label><input type="text" id="redeemNoteInput" placeholder="e.g. Ordering coffee"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelRedeemBtn">Cancel</button>
+      <button class="btn btn-primary" id="confirmRedeemBtn">Redeem</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Workout Modal -->
+<div class="modal-backdrop" id="workoutModalBackdrop">
+  <div class="modal">
+    <h3 class="serif">New workout</h3>
+    <div class="field"><label>Workout name</label><input type="text" id="workoutNameInput" placeholder="e.g. Push-ups"></div>
+    <div class="field"><label>Timer duration (minutes)</label><input type="number" id="workoutDurationInput" min="1" step="1" placeholder="e.g. 5"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelWorkoutBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveWorkoutBtn">Save workout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Timer overlay (shared by tasks and workouts) -->
+<div class="timer-overlay" id="timerOverlay">
+  <div class="task-name serif" id="timerTaskName"></div>
+  <div class="timer-clock" id="timerClock">00:00</div>
+  <button class="btn btn-primary" id="timerCancelBtn" style="margin-bottom:10px;">Stop</button>
+</div>
+
+<!-- Reader overlay -->
+<div class="reader-overlay" id="readerOverlay">
+  <div class="reader-topbar">
+    <button class="icon-btn" id="readerBackBtn" style="font-size:22px;">←</button>
+    <div class="reader-title" id="readerTitle"></div>
+    <button class="icon-btn" id="readerNotesBtn" style="font-size:19px;">📝</button>
+  </div>
+  <div class="reader-body" id="readerBody">
+    <div class="reader-navzone left" id="navLeft"></div>
+    <div class="reader-navzone right" id="navRight"></div>
+    <div class="page-wrap" id="pageWrap"></div>
+  </div>
+  <div class="reader-bottombar">
+    <button class="reader-toolbtn" id="prevPageBtn">‹ Prev</button>
+    <div class="page-indicator" id="pageIndicator">–</div>
+    <div class="highlight-swatches">
+      <div class="swatch" style="background:#D4A72C" data-color="rgba(212,167,44,0.55)"></div>
+      <div class="swatch" style="background:#4C9A6B" data-color="rgba(76,154,107,0.55)"></div>
+      <div class="swatch" style="background:#5B8DBF" data-color="rgba(91,141,191,0.55)"></div>
+    </div>
+    <button class="reader-toolbtn" id="nextPageBtn">Next ›</button>
+  </div>
+</div>
+
+<!-- Notes drawer -->
+<div class="notes-drawer" id="notesDrawer">
+  <div class="notes-panel">
+    <h3 class="serif" style="margin:0 0 14px;">Notes</h3>
+    <div id="notesList"></div>
+    <div class="field" style="margin-top:14px;">
+      <label>Add a note (for the current page)</label>
+      <textarea id="noteTextInput" placeholder="Type your note..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="closeNotesBtn">Close</button>
+      <button class="btn btn-primary" id="saveNoteBtn">Save note</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+/* ---------- IndexedDB setup ---------- */
+const DB_NAME = "routineQuestDB";
+const DB_VERSION = 2;
+let db;
+
+function openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e)=>{
+      const _db = e.target.result;
+      if(!_db.objectStoreNames.contains("tasks")){
+        const store = _db.createObjectStore("tasks", {keyPath:"id", autoIncrement:true});
+        store.createIndex("category", "category");
+      }
+      if(!_db.objectStoreNames.contains("completions")){
+        const store = _db.createObjectStore("completions", {keyPath:"id", autoIncrement:true});
+        store.createIndex("taskDate", ["taskId","date"], {unique:true});
+        store.createIndex("date", "date");
+      }
+      if(!_db.objectStoreNames.contains("redemptions")){
+        _db.createObjectStore("redemptions", {keyPath:"id", autoIncrement:true});
+      }
+      if(!_db.objectStoreNames.contains("workouts")){
+        _db.createObjectStore("workouts", {keyPath:"id", autoIncrement:true});
+      }
+      if(!_db.objectStoreNames.contains("documents")){
+        _db.createObjectStore("documents", {keyPath:"id", autoIncrement:true});
+      }
+      if(!_db.objectStoreNames.contains("highlights")){
+        const store = _db.createObjectStore("highlights", {keyPath:"id", autoIncrement:true});
+        store.createIndex("docPage", ["docId","page"]);
+      }
+      if(!_db.objectStoreNames.contains("notes")){
+        const store = _db.createObjectStore("notes", {keyPath:"id", autoIncrement:true});
+        store.createIndex("docId", "docId");
+      }
+    };
+    req.onsuccess = (e)=>{ db = e.target.result; resolve(db); };
+    req.onerror = (e)=> reject(e.target.error);
+  });
+}
+function tx(storeNames, mode="readonly"){ return db.transaction(storeNames, mode); }
+function getAll(storeName){
+  return new Promise((resolve,reject)=>{
+    const req = tx(storeName).objectStore(storeName).getAll();
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function getOne(storeName, key){
+  return new Promise((resolve,reject)=>{
+    const req = tx(storeName).objectStore(storeName).get(key);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function add(storeName, obj){
+  return new Promise((resolve,reject)=>{
+    const req = tx(storeName,"readwrite").objectStore(storeName).add(obj);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function put(storeName, obj){
+  return new Promise((resolve,reject)=>{
+    const req = tx(storeName,"readwrite").objectStore(storeName).put(obj);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function del(storeName, key){
+  return new Promise((resolve,reject)=>{
+    const req = tx(storeName,"readwrite").objectStore(storeName).delete(key);
+    req.onsuccess = ()=> resolve();
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function getFromIndex(storeName, indexName, key){
+  return new Promise((resolve,reject)=>{
+    const req = tx(storeName).objectStore(storeName).index(indexName).get(key);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+function getAllFromIndex(storeName, indexName, key){
+  return new Promise((resolve,reject)=>{
+    const req = tx(storeName).objectStore(storeName).index(indexName).getAll(key);
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+/* ---------- helpers ---------- */
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=> t.classList.remove("show"), 1800);
+}
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ==================== TASKS ==================== */
+let allTasks = [];
+let todaysCompletions = [];
+
+async function refreshBalance(){
+  const completions = await getAll("completions");
+  const redemptions = await getAll("redemptions");
+  const earned = completions.reduce((s,c)=> s + c.points, 0);
+  const spent = redemptions.reduce((s,r)=> s + r.amount, 0);
+  document.getElementById("balanceAmount").textContent = "₹" + (earned - spent);
+}
+
+async function refreshTasks(){
+  allTasks = await getAll("tasks");
+  const completions = await getAll("completions");
+  const today = todayStr();
+  todaysCompletions = completions.filter(c=> c.date === today);
+  renderTaskList();
+}
+
+function renderTaskList(){
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+  document.getElementById("todayLabel").textContent = new Date().toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
+  if(allTasks.length === 0){
+    list.innerHTML = '<div class="empty-state">No tasks yet. Tap + to add your first task.</div>';
+    return;
+  }
+  allTasks.forEach(task=>{
+    const done = todaysCompletions.some(c=> c.taskId === task.id);
+    const card = document.createElement("div");
+    card.className = "task-card" + (done ? " done" : "");
+    const info = document.createElement("div");
+    info.className = "task-info";
+    info.innerHTML = `<p class="task-name">${escapeHtml(task.name)}</p>
+      <div class="task-meta">
+        <span class="tag">${escapeHtml(task.category)}</span>
+        ${task.duration ? `<span class="tag">${task.duration} min</span>` : ""}
+        <span class="points-chip">₹${task.points}</span>
+      </div>`;
+    card.appendChild(info);
+    const action = document.createElement("div");
+    action.className = "task-action";
+    if(task.duration && !done){
+      const btn = document.createElement("button");
+      btn.className = "btn-timer";
+      btn.textContent = "Start";
+      btn.onclick = ()=> startTimer(task.name, task.duration, ()=> completeTask(task));
+      action.appendChild(btn);
+    } else {
+      const btn = document.createElement("button");
+      btn.className = "btn-complete" + (done ? " checked" : "");
+      btn.textContent = done ? "✓" : "";
+      btn.disabled = done;
+      btn.onclick = ()=> completeTask(task);
+      action.appendChild(btn);
+    }
+    card.appendChild(action);
+    list.appendChild(card);
+  });
+}
+
+async function completeTask(task){
+  const today = todayStr();
+  const existing = await getFromIndex("completions", "taskDate", [task.id, today]);
+  if(existing) return;
+  await add("completions", {taskId:task.id, date:today, points:task.points, timestamp:Date.now()});
+  showToast(`+₹${task.points} — ${task.name} complete`);
+  await refreshTasks();
+  await refreshBalance();
+}
+
+/* ---------- shared timer overlay (tasks + workouts) ---------- */
+let activeTimerInterval = null;
+function startTimer(name, minutes, onComplete){
+  const overlay = document.getElementById("timerOverlay");
+  document.getElementById("timerTaskName").textContent = name;
+  overlay.classList.add("open");
+  let remaining = minutes * 60;
+  updateClock(remaining);
+  activeTimerInterval = setInterval(()=>{
+    remaining--;
+    updateClock(remaining);
+    if(remaining <= 0){
+      clearInterval(activeTimerInterval);
+      overlay.classList.remove("open");
+      if(onComplete) onComplete();
+    }
+  }, 1000);
+  document.getElementById("timerCancelBtn").onclick = ()=>{
+    clearInterval(activeTimerInterval);
+    overlay.classList.remove("open");
+  };
+}
+function updateClock(seconds){
+  const m = String(Math.floor(Math.max(seconds,0)/60)).padStart(2,"0");
+  const s = String(Math.max(seconds,0)%60).padStart(2,"0");
+  document.getElementById("timerClock").textContent = `${m}:${s}`;
+}
+
+/* task modal */
+const taskModal = document.getElementById("taskModalBackdrop");
+document.getElementById("addTaskFab").onclick = ()=>{
+  document.getElementById("taskNameInput").value = "";
+  document.getElementById("taskPointsInput").value = "";
+  document.getElementById("taskDurationInput").value = "";
+  document.getElementById("taskCategoryInput").value = "Other";
+  taskModal.classList.add("open");
+};
+document.getElementById("cancelTaskBtn").onclick = ()=> taskModal.classList.remove("open");
+document.getElementById("saveTaskBtn").onclick = async ()=>{
+  const name = document.getElementById("taskNameInput").value.trim();
+  const points = parseInt(document.getElementById("taskPointsInput").value) || 0;
+  const duration = parseInt(document.getElementById("taskDurationInput").value) || 0;
+  const category = document.getElementById("taskCategoryInput").value;
+  if(!name){ showToast("Give the task a name"); return; }
+  await add("tasks", {name, points, duration, category, createdAt:Date.now()});
+  taskModal.classList.remove("open");
+  showToast("Task added");
+  await refreshTasks();
+};
+
+/* redeem modal */
+const redeemModal = document.getElementById("redeemModalBackdrop");
+document.getElementById("redeemBtn").onclick = ()=>{
+  document.getElementById("redeemAmountInput").value = "";
+  document.getElementById("redeemNoteInput").value = "";
+  redeemModal.classList.add("open");
+};
+document.getElementById("cancelRedeemBtn").onclick = ()=> redeemModal.classList.remove("open");
+document.getElementById("confirmRedeemBtn").onclick = async ()=>{
+  const amount = parseInt(document.getElementById("redeemAmountInput").value) || 0;
+  const note = document.getElementById("redeemNoteInput").value.trim();
+  if(amount <= 0){ showToast("Enter a valid amount"); return; }
+  await add("redemptions", {amount, note, timestamp:Date.now()});
+  redeemModal.classList.remove("open");
+  showToast(`Redeemed ₹${amount}`);
+  await refreshBalance();
+};
+
+/* ==================== EXERCISE ==================== */
+async function refreshWorkouts(){
+  const workouts = await getAll("workouts");
+  const list = document.getElementById("workoutList");
+  list.innerHTML = "";
+  if(workouts.length === 0){
+    list.innerHTML = '<div class="empty-state">No workouts yet. Add one to start timing your sets.</div>';
+    return;
+  }
+  workouts.forEach(w=>{
+    const card = document.createElement("div");
+    card.className = "task-card";
+    card.innerHTML = `<div class="task-info">
+        <p class="task-name">${escapeHtml(w.name)}</p>
+        <div class="task-meta"><span class="tag">${w.duration} min</span></div>
+      </div>`;
+    const action = document.createElement("div");
+    action.className = "task-action";
+    const startBtn = document.createElement("button");
+    startBtn.className = "btn-timer";
+    startBtn.textContent = "Start";
+    startBtn.onclick = ()=> startTimer(w.name, w.duration, ()=> showToast(`${w.name} done 💪`));
+    const delBtn = document.createElement("button");
+    delBtn.className = "icon-btn";
+    delBtn.textContent = "✕";
+    delBtn.onclick = async ()=>{ await del("workouts", w.id); await refreshWorkouts(); };
+    action.appendChild(startBtn);
+    action.appendChild(delBtn);
+    card.appendChild(action);
+    list.appendChild(card);
+  });
+}
+const workoutModal = document.getElementById("workoutModalBackdrop");
+document.getElementById("addWorkoutBtn").onclick = ()=>{
+  document.getElementById("workoutNameInput").value = "";
+  document.getElementById("workoutDurationInput").value = "";
+  workoutModal.classList.add("open");
+};
+document.getElementById("cancelWorkoutBtn").onclick = ()=> workoutModal.classList.remove("open");
+document.getElementById("saveWorkoutBtn").onclick = async ()=>{
+  const name = document.getElementById("workoutNameInput").value.trim();
+  const duration = parseInt(document.getElementById("workoutDurationInput").value) || 0;
+  if(!name || duration <= 0){ showToast("Enter a name and duration"); return; }
+  await add("workouts", {name, duration, createdAt:Date.now()});
+  workoutModal.classList.remove("open");
+  await refreshWorkouts();
+};
+
+/* ==================== READING ==================== */
+let currentDoc = null;      // full document record from DB
+let currentPdfProxy = null; // pdf.js document proxy
+let currentPageNum = 1;
+
+async function refreshDocs(){
+  const docs = await getAll("documents");
+  const list = document.getElementById("docList");
+  list.innerHTML = "";
+  if(docs.length === 0){
+    list.innerHTML = '<div class="empty-state">No documents yet. Tap Upload to add a PDF or Word file.</div>';
+    return;
+  }
+  docs.sort((a,b)=> (b.addedAt||0)-(a.addedAt||0));
+  docs.forEach(doc=>{
+    const pct = doc.totalPages ? Math.round(((doc.currentPage||1)/doc.totalPages)*100) : 0;
+    const card = document.createElement("div");
+    card.className = "doc-card";
+    card.innerHTML = `
+      <div class="doc-icon">${doc.type === "pdf" ? "PDF" : "DOC"}</div>
+      <div class="doc-info">
+        <p class="doc-title">${escapeHtml(doc.title)}</p>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="doc-sub">Page ${doc.currentPage||1} of ${doc.totalPages||"?"} · ${pct}%</div>
+      </div>
+      <button class="icon-btn" title="Delete">✕</button>`;
+    card.querySelector(".icon-btn").onclick = async (e)=>{
+      e.stopPropagation();
+      await del("documents", doc.id);
+      const hs = await getAllFromIndex("highlights","docPage",[doc.id, 1]); // best-effort; full cleanup below
+      const allHi = await getAll("highlights");
+      for(const h of allHi.filter(h=>h.docId===doc.id)) await del("highlights", h.id);
+      const allNotes = await getAll("notes");
+      for(const n of allNotes.filter(n=>n.docId===doc.id)) await del("notes", n.id);
+      await refreshDocs();
+    };
+    card.onclick = ()=> openReader(doc.id);
+    list.appendChild(card);
+  });
+}
+
+document.getElementById("uploadDocBtn").onclick = ()=> document.getElementById("fileInput").click();
+document.getElementById("fileInput").onchange = async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const isPdf = file.name.toLowerCase().endsWith(".pdf");
+  const isDocx = file.name.toLowerCase().endsWith(".docx");
+  if(!isPdf && !isDocx){ showToast("Only PDF and .docx are supported"); return; }
+  showToast("Uploading...");
+  const buf = await file.arrayBuffer();
+
+  if(isPdf){
+    let numPages = 0;
+    try{
+      const proxy = await pdfjsLib.getDocument({data: buf.slice(0)}).promise;
+      numPages = proxy.numPages;
+    }catch(err){ showToast("Couldn't read that PDF"); return; }
+    await add("documents", {
+      title:file.name, type:"pdf", data:buf, totalPages:numPages,
+      currentPage:1, addedAt:Date.now()
+    });
+  } else {
+    let pagesHtml = [];
+    try{
+      const result = await mammoth.convertToHtml({arrayBuffer: buf.slice(0)});
+      pagesHtml = paginateHtml(result.value);
+    }catch(err){ showToast("Couldn't read that Word file"); return; }
+    await add("documents", {
+      title:file.name, type:"docx", pagesHtml, totalPages:pagesHtml.length,
+      currentPage:1, addedAt:Date.now()
+    });
+  }
+  e.target.value = "";
+  showToast("Added to your vault");
+  await refreshDocs();
+};
+
+function paginateHtml(html){
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+  const CHARS_PER_PAGE = 1600;
+  const pages = [];
+  let current = document.createElement("div");
+  let currentLen = 0;
+  Array.from(temp.childNodes).forEach(node=>{
+    const len = (node.outerHTML || node.textContent || "").length;
+    if(currentLen > 0 && currentLen + len > CHARS_PER_PAGE){
+      pages.push(current.innerHTML);
+      current = document.createElement("div");
+      currentLen = 0;
+    }
+    current.appendChild(node.cloneNode(true));
+    currentLen += len;
+  });
+  if(current.childNodes.length) pages.push(current.innerHTML);
+  return pages.length ? pages : ["<p>(empty document)</p>"];
+}
+
+/* ---------- reader ---------- */
+async function openReader(docId){
+  currentDoc = await getOne("documents", docId);
+  if(!currentDoc) return;
+  currentPageNum = currentDoc.currentPage || 1;
+  document.getElementById("readerTitle").textContent = currentDoc.title;
+  document.getElementById("readerOverlay").classList.add("open");
+  if(currentDoc.type === "pdf"){
+    currentPdfProxy = await pdfjsLib.getDocument({data: currentDoc.data.slice(0)}).promise;
+  } else {
+    currentPdfProxy = null;
+  }
+  await renderCurrentPage();
+}
+
+document.getElementById("readerBackBtn").onclick = ()=>{
+  document.getElementById("readerOverlay").classList.remove("open");
+  currentDoc = null; currentPdfProxy = null;
+  refreshDocs();
+};
+document.getElementById("navLeft").onclick = ()=> changePage(-1);
+document.getElementById("navRight").onclick = ()=> changePage(1);
+document.getElementById("prevPageBtn").onclick = ()=> changePage(-1);
+document.getElementById("nextPageBtn").onclick = ()=> changePage(1);
+
+async function changePage(delta){
+  const newPage = currentPageNum + delta;
+  if(newPage < 1 || newPage > currentDoc.totalPages) return;
+  currentPageNum = newPage;
+  currentDoc.currentPage = newPage;
+  await put("documents", currentDoc);
+  await renderCurrentPage();
+}
+
+async function renderCurrentPage(){
+  document.getElementById("pageIndicator").textContent = `${currentPageNum} / ${currentDoc.totalPages}`;
+  const wrap = document.getElementById("pageWrap");
+  wrap.style.opacity = "0";
+  wrap.innerHTML = "";
+
+  if(currentDoc.type === "pdf"){
+    await renderPdfPage(wrap, currentPageNum);
+  } else {
+    const div = document.createElement("div");
+    div.className = "docx-page";
+    div.innerHTML = currentDoc.pagesHtml[currentPageNum-1] || "";
+    wrap.appendChild(div);
+  }
+  requestAnimationFrame(()=> wrap.style.opacity = "1");
+}
+
+async function renderPdfPage(wrap, pageNum){
+  const page = await currentPdfProxy.getPage(pageNum);
+  const bodyWidth = document.getElementById("readerBody").clientWidth - 32;
+  const baseViewport = page.getViewport({scale:1});
+  const scale = Math.min((bodyWidth) / baseViewport.width, 1.6);
+  const viewport = page.getViewport({scale});
+
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  wrap.style.width = viewport.width+"px";
+  wrap.style.height = viewport.height+"px";
+  wrap.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  await page.render({canvasContext:ctx, viewport}).promise;
+
+  const textLayer = document.createElement("div");
+  textLayer.className = "text-layer";
+  textLayer.style.width = viewport.width+"px";
+  textLayer.style.height = viewport.height+"px";
+  wrap.appendChild(textLayer);
+
+  const textContent = await page.getTextContent();
+  textContent.items.forEach((item, idx)=>{
+    const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+    const angle = Math.atan2(tx[1], tx[0]);
+    const fontHeight = Math.hypot(tx[2], tx[3]);
+    const span = document.createElement("span");
+    span.textContent = item.str;
+    span.dataset.item = idx;
+    span.style.left = tx[4] + "px";
+    span.style.top = (tx[5] - fontHeight) + "px";
+    span.style.fontSize = fontHeight + "px";
+    span.style.fontFamily = "sans-serif";
+    if(angle !== 0) span.style.transform = `rotate(${angle}rad)`;
+    textLayer.appendChild(span);
+  });
+
+  const highlights = await getAllFromIndex("highlights", "docPage", [currentDoc.id, pageNum]);
+  highlights.forEach(h=> applySegmentsToLayer(textLayer, h.segments, h.color));
+}
+
+function applySegmentsToLayer(textLayer, segments, color){
+  segments.forEach(seg=>{
+    const span = textLayer.querySelector(`span[data-item="${seg.itemIndex}"]`);
+    if(!span || !span.firstChild) return;
+    wrapTextNode(span.firstChild, seg.start, seg.end, color);
+  });
+}
+function wrapTextNode(textNode, start, end, color){
+  const len = textNode.textContent.length;
+  start = Math.max(0, Math.min(start, len));
+  end = Math.max(start, Math.min(end, len));
+  if(start >= end) return;
+  const afterNode = textNode.splitText(end);
+  const midNode = textNode.splitText(start);
+  const mark = document.createElement("mark");
+  mark.style.background = color;
+  midNode.parentNode.insertBefore(mark, midNode);
+  mark.appendChild(midNode);
+}
+
+/* selection -> highlight (PDF, via text-layer spans) */
+function getPdfSelectionSegments(textLayer){
+  const sel = window.getSelection();
+  if(!sel.rangeCount) return null;
+  const range = sel.getRangeAt(0);
+  if(range.collapsed) return null;
+  const spans = Array.from(textLayer.querySelectorAll("span[data-item]"));
+  const segments = [];
+  spans.forEach(span=>{
+    const textNode = span.firstChild;
+    if(!textNode) return;
+    const spanRange = document.createRange();
+    spanRange.selectNodeContents(span);
+    const overlap = range.compareBoundaryPoints(Range.START_TO_END, spanRange) < 0
+                 && range.compareBoundaryPoints(Range.END_TO_START, spanRange) > 0;
+    if(!overlap) return;
+    let start = (range.startContainer === textNode) ? range.startOffset : 0;
+    let end = (range.endContainer === textNode) ? range.endOffset : textNode.textContent.length;
+    segments.push({itemIndex: parseInt(span.dataset.item), start, end});
+  });
+  sel.removeAllRanges();
+  return segments.length ? segments : null;
+}
+
+/* selection -> highlight (DOCX, generic DOM range) */
+function highlightDomRange(range, color){
+  const container = range.commonAncestorContainer;
+  const walker = document.createTreeWalker(
+    container.nodeType === 3 ? container.parentNode : container,
+    NodeFilter.SHOW_TEXT
+  );
+  const nodes = [];
+  let n;
+  while(n = walker.nextNode()){ if(range.intersectsNode(n)) nodes.push(n); }
+  nodes.forEach(node=>{
+    const start = (node === range.startContainer) ? range.startOffset : 0;
+    const end = (node === range.endContainer) ? range.endOffset : node.textContent.length;
+    if(start >= end) return;
+    wrapTextNode(node, start, end, color);
+  });
+}
+
+document.querySelectorAll(".swatch").forEach(sw=>{
+  sw.onclick = async ()=>{
+    const color = sw.dataset.color;
+    const sel = window.getSelection();
+    if(!sel.rangeCount || sel.getRangeAt(0).collapsed){ showToast("Select some text first"); return; }
+    const range = sel.getRangeAt(0);
+
+    if(currentDoc.type === "pdf"){
+      const textLayer = document.querySelector(".text-layer");
+      const segments = getPdfSelectionSegments(textLayer);
+      if(!segments){ showToast("Select some text first"); return; }
+      applySegmentsToLayer(textLayer, segments, color);
+      await add("highlights", {docId:currentDoc.id, page:currentPageNum, segments, color, createdAt:Date.now()});
+      showToast("Highlighted");
+    } else {
+      highlightDomRange(range, color);
+      sel.removeAllRanges();
+      const pageDiv = document.querySelector("#pageWrap .docx-page");
+      currentDoc.pagesHtml[currentPageNum-1] = pageDiv.innerHTML;
+      await put("documents", currentDoc);
+      showToast("Highlighted");
+    }
+  };
+});
+
+/* notes */
+document.getElementById("readerNotesBtn").onclick = async ()=>{
+  await renderNotes();
+  document.getElementById("noteTextInput").value = "";
+  document.getElementById("notesDrawer").classList.add("open");
+};
+document.getElementById("closeNotesBtn").onclick = ()=> document.getElementById("notesDrawer").classList.remove("open");
+document.getElementById("saveNoteBtn").onclick = async ()=>{
+  const text = document.getElementById("noteTextInput").value.trim();
+  if(!text) return;
+  await add("notes", {docId:currentDoc.id, page:currentPageNum, text, createdAt:Date.now()});
+  document.getElementById("noteTextInput").value = "";
+  await renderNotes();
+  showToast("Note saved");
+};
+async function renderNotes(){
+  const notes = await getAllFromIndex("notes", "docId", currentDoc.id);
+  notes.sort((a,b)=> b.createdAt - a.createdAt);
+  const list = document.getElementById("notesList");
+  list.innerHTML = notes.length ? "" : '<div class="empty-state">No notes yet.</div>';
+  notes.forEach(n=>{
+    const item = document.createElement("div");
+    item.className = "note-item";
+    item.innerHTML = `<div class="np">Page ${n.page}</div>${escapeHtml(n.text)}`;
+    list.appendChild(item);
+  });
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=> b.classList.remove("active"));
+    btn.classList.add("active");
+    ["tasks","exercise","reading","stats"].forEach(name=>{
+      document.getElementById("panel-"+name).style.display = (name === btn.dataset.tab) ? "block" : "none";
+    });
+  };
+});
+
+/* ---------- init ---------- */
+(async function init(){
+  await openDB();
+  await refreshTasks();
+  await refreshBalance();
+  await refreshWorkouts();
+  await refreshDocs();
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
