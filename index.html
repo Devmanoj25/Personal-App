@@ -291,6 +291,25 @@
     <div id="docList"></div>
   </div>
 
+  <div id="panel-budget" style="display:none;">
+    <div class="task-card" style="flex-direction:column; align-items:flex-start; gap:6px;">
+      <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+        <div>
+          <p class="eyebrow" style="margin:0;">Total amount to budget</p>
+          <div class="balance-amount" id="budgetTotalAmount" style="font-size:30px;">₹0</div>
+        </div>
+        <button class="small-add-btn" id="editTotalBtn">Edit</button>
+      </div>
+      <div class="doc-sub" id="allocatedSummary" style="margin-top:2px;"></div>
+    </div>
+
+    <div class="section-title">
+      Categories
+      <button class="small-add-btn" id="addCategoryBtn">+ Add category</button>
+    </div>
+    <div id="categoryList"></div>
+  </div>
+
   <div id="panel-stats" class="soon-panel" style="display:none;">
     <div class="serif">Stats</div>
     Streaks and history charts — coming in a future update.
@@ -303,6 +322,7 @@
   <button class="tab-btn active" data-tab="tasks"><span class="ic">☑</span>Tasks</button>
   <button class="tab-btn" data-tab="exercise"><span class="ic">🏃</span>Exercise</button>
   <button class="tab-btn" data-tab="reading"><span class="ic">📖</span>Reading</button>
+  <button class="tab-btn" data-tab="budget"><span class="ic">💰</span>Budget</button>
   <button class="tab-btn" data-tab="stats"><span class="ic">📊</span>Stats</button>
 </nav>
 
@@ -353,6 +373,51 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="cancelWorkoutBtn">Cancel</button>
       <button class="btn btn-primary" id="saveWorkoutBtn">Save workout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Total Budget Modal -->
+<div class="modal-backdrop" id="totalModalBackdrop">
+  <div class="modal">
+    <h3 class="serif">Total amount to budget</h3>
+    <div class="field"><label>Amount (₹)</label><input type="number" id="totalAmountInput" min="0" step="1" placeholder="e.g. 50000"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelTotalBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveTotalBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Category Modal -->
+<div class="modal-backdrop" id="categoryModalBackdrop">
+  <div class="modal">
+    <h3 class="serif">New spending category</h3>
+    <div class="field"><label>Name</label><input type="text" id="categoryNameInput" placeholder="e.g. Fuel"></div>
+    <div class="field"><label>Percentage of total (%)</label><input type="number" id="categoryPercentInput" min="0" max="100" step="1" placeholder="e.g. 15"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelCategoryBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveCategoryBtn">Save category</button>
+    </div>
+  </div>
+</div>
+
+<!-- Category Detail Modal -->
+<div class="modal-backdrop" id="categoryDetailBackdrop">
+  <div class="modal">
+    <h3 class="serif" id="categoryDetailName">Category</h3>
+    <div class="doc-sub" id="categoryDetailStats" style="margin-bottom:14px;"></div>
+    <div id="expenseList" style="margin-bottom:14px;"></div>
+    <div class="field-row">
+      <div class="field"><label>Amount spent (₹)</label><input type="number" id="expenseAmountInput" min="0" step="1" placeholder="e.g. 500"></div>
+      <div class="field"><label>Note (optional)</label><input type="text" id="expenseNoteInput" placeholder="e.g. Petrol"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="deleteCategoryBtn">Delete category</button>
+      <button class="btn btn-primary" id="addExpenseBtn">Log expense</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="closeCategoryDetailBtn">Close</button>
     </div>
   </div>
 </div>
@@ -413,7 +478,7 @@ if (window.pdfjsLib) {
 
 /* ---------- IndexedDB setup ---------- */
 const DB_NAME = "routineQuestDB";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let db;
 
 function openDB(){
@@ -446,6 +511,16 @@ function openDB(){
       if(!_db.objectStoreNames.contains("notes")){
         const store = _db.createObjectStore("notes", {keyPath:"id", autoIncrement:true});
         store.createIndex("docId", "docId");
+      }
+      if(!_db.objectStoreNames.contains("budgetSettings")){
+        _db.createObjectStore("budgetSettings", {keyPath:"id"});
+      }
+      if(!_db.objectStoreNames.contains("budgetCategories")){
+        _db.createObjectStore("budgetCategories", {keyPath:"id", autoIncrement:true});
+      }
+      if(!_db.objectStoreNames.contains("budgetExpenses")){
+        const store = _db.createObjectStore("budgetExpenses", {keyPath:"id", autoIncrement:true});
+        store.createIndex("categoryId", "categoryId");
       }
     };
     req.onsuccess = (e)=>{ db = e.target.result; resolve(db); };
@@ -706,6 +781,166 @@ document.getElementById("saveWorkoutBtn").onclick = async ()=>{
   await add("workouts", {name, duration, createdAt:Date.now()});
   workoutModal.classList.remove("open");
   await refreshWorkouts();
+};
+
+/* ==================== BUDGET ==================== */
+let budgetTotal = 0;
+let budgetCategories = [];
+let budgetExpenses = [];
+let activeCategoryId = null;
+
+async function refreshBudget(){
+  const settings = await getOne("budgetSettings", "main");
+  budgetTotal = settings ? settings.totalAmount : 0;
+  budgetCategories = await getAll("budgetCategories");
+  budgetExpenses = await getAll("budgetExpenses");
+  document.getElementById("budgetTotalAmount").textContent = "₹" + budgetTotal;
+
+  const allocatedPercent = budgetCategories.reduce((s,c)=> s + c.percent, 0);
+  const summaryEl = document.getElementById("allocatedSummary");
+  summaryEl.textContent = `${allocatedPercent}% of total allocated across ${budgetCategories.length} categor${budgetCategories.length===1?"y":"ies"}`;
+  summaryEl.style.color = allocatedPercent > 100 ? "var(--red)" : "var(--text-dim)";
+
+  renderCategoryList();
+}
+
+function renderCategoryList(){
+  const list = document.getElementById("categoryList");
+  list.innerHTML = "";
+  if(budgetCategories.length === 0){
+    list.innerHTML = '<div class="empty-state">No categories yet. Add one (e.g. Fuel, EMI, LIC) to start budgeting.</div>';
+    return;
+  }
+  budgetCategories.forEach(cat=>{
+    const allocated = Math.round(budgetTotal * cat.percent / 100);
+    const spent = budgetExpenses.filter(e=> e.categoryId === cat.id).reduce((s,e)=> s + e.amount, 0);
+    const over = spent > allocated;
+    const pct = allocated > 0 ? Math.min(Math.round((spent/allocated)*100), 999) : (spent>0?999:0);
+
+    const card = document.createElement("div");
+    card.className = "task-card";
+    card.style.cursor = "pointer";
+    card.innerHTML = `
+      <div class="task-info">
+        <p class="task-name">${escapeHtml(cat.name)} <span class="tag">${cat.percent}%</span></p>
+        <div class="task-meta">
+          <span>Allocated ₹${allocated}</span>
+          <span>·</span>
+          <span style="color:${over ? "var(--red)" : "var(--green)"}; font-weight:600;">
+            Spent ₹${spent} ${over ? "(over budget)" : ""}
+          </span>
+        </div>
+        <div class="progress-track" style="margin-top:8px;">
+          <div class="progress-fill" style="width:${Math.min(pct,100)}%; background:${over ? "var(--red)" : "var(--gold)"};"></div>
+        </div>
+      </div>`;
+    card.onclick = ()=> openCategoryDetail(cat.id);
+    list.appendChild(card);
+  });
+}
+
+/* total amount modal */
+const totalModal = document.getElementById("totalModalBackdrop");
+document.getElementById("editTotalBtn").onclick = ()=>{
+  document.getElementById("totalAmountInput").value = budgetTotal || "";
+  totalModal.classList.add("open");
+};
+document.getElementById("cancelTotalBtn").onclick = ()=> totalModal.classList.remove("open");
+document.getElementById("saveTotalBtn").onclick = async ()=>{
+  const amount = parseFloat(document.getElementById("totalAmountInput").value) || 0;
+  await put("budgetSettings", {id:"main", totalAmount:amount, updatedAt:Date.now()});
+  totalModal.classList.remove("open");
+  showToast("Total amount updated");
+  await refreshBudget();
+};
+
+/* add category modal */
+const categoryModal = document.getElementById("categoryModalBackdrop");
+document.getElementById("addCategoryBtn").onclick = ()=>{
+  document.getElementById("categoryNameInput").value = "";
+  document.getElementById("categoryPercentInput").value = "";
+  categoryModal.classList.add("open");
+};
+document.getElementById("cancelCategoryBtn").onclick = ()=> categoryModal.classList.remove("open");
+document.getElementById("saveCategoryBtn").onclick = async ()=>{
+  const name = document.getElementById("categoryNameInput").value.trim();
+  const percent = parseFloat(document.getElementById("categoryPercentInput").value) || 0;
+  if(!name || percent <= 0){ showToast("Enter a name and percentage"); return; }
+  await add("budgetCategories", {name, percent, createdAt:Date.now()});
+  categoryModal.classList.remove("open");
+  showToast("Category added");
+  await refreshBudget();
+};
+
+/* category detail modal */
+const categoryDetailModal = document.getElementById("categoryDetailBackdrop");
+async function openCategoryDetail(catId){
+  activeCategoryId = catId;
+  await renderCategoryDetail();
+  document.getElementById("expenseAmountInput").value = "";
+  document.getElementById("expenseNoteInput").value = "";
+  categoryDetailModal.classList.add("open");
+}
+async function renderCategoryDetail(){
+  const cat = budgetCategories.find(c=> c.id === activeCategoryId);
+  if(!cat) return;
+  const allocated = Math.round(budgetTotal * cat.percent / 100);
+  const expenses = budgetExpenses.filter(e=> e.categoryId === activeCategoryId).sort((a,b)=> b.timestamp-a.timestamp);
+  const spent = expenses.reduce((s,e)=> s + e.amount, 0);
+  const over = spent > allocated;
+
+  document.getElementById("categoryDetailName").textContent = `${cat.name} (${cat.percent}%)`;
+  document.getElementById("categoryDetailStats").innerHTML =
+    `Allocated ₹${allocated} · Spent ₹${spent} · <span style="color:${over ? "var(--red)" : "var(--green)"}; font-weight:600;">
+      ${over ? `₹${spent-allocated} over budget` : `₹${allocated-spent} remaining`}
+    </span>`;
+
+  const list = document.getElementById("expenseList");
+  list.innerHTML = expenses.length ? "" : '<div class="empty-state">No expenses logged yet.</div>';
+  expenses.forEach(e=>{
+    const item = document.createElement("div");
+    item.className = "note-item";
+    item.style.display = "flex";
+    item.style.justifyContent = "space-between";
+    item.style.alignItems = "center";
+    item.innerHTML = `<div><b>₹${e.amount}</b> ${e.note ? "— "+escapeHtml(e.note) : ""}
+      <div class="np">${new Date(e.timestamp).toLocaleDateString()}</div></div>`;
+    const delBtn = document.createElement("button");
+    delBtn.className = "icon-btn";
+    delBtn.textContent = "✕";
+    delBtn.onclick = async ()=>{
+      await del("budgetExpenses", e.id);
+      budgetExpenses = await getAll("budgetExpenses");
+      await renderCategoryDetail();
+      renderCategoryList();
+    };
+    item.appendChild(delBtn);
+    list.appendChild(item);
+  });
+}
+document.getElementById("closeCategoryDetailBtn").onclick = ()=> categoryDetailModal.classList.remove("open");
+document.getElementById("addExpenseBtn").onclick = async ()=>{
+  const amount = parseFloat(document.getElementById("expenseAmountInput").value) || 0;
+  const note = document.getElementById("expenseNoteInput").value.trim();
+  if(amount <= 0){ showToast("Enter a valid amount"); return; }
+  await add("budgetExpenses", {categoryId:activeCategoryId, amount, note, date:todayStr(), timestamp:Date.now()});
+  document.getElementById("expenseAmountInput").value = "";
+  document.getElementById("expenseNoteInput").value = "";
+  budgetExpenses = await getAll("budgetExpenses");
+  await renderCategoryDetail();
+  renderCategoryList();
+  const cat = budgetCategories.find(c=> c.id === activeCategoryId);
+  const allocated = Math.round(budgetTotal * cat.percent / 100);
+  const spent = budgetExpenses.filter(e=> e.categoryId === activeCategoryId).reduce((s,e)=> s + e.amount, 0);
+  showToast(spent > allocated ? `Logged — you're over budget on ${cat.name}` : `Logged ₹${amount} for ${cat.name}`);
+};
+document.getElementById("deleteCategoryBtn").onclick = async ()=>{
+  const catExpenses = budgetExpenses.filter(e=> e.categoryId === activeCategoryId);
+  for(const e of catExpenses) await del("budgetExpenses", e.id);
+  await del("budgetCategories", activeCategoryId);
+  categoryDetailModal.classList.remove("open");
+  showToast("Category deleted");
+  await refreshBudget();
 };
 
 /* ==================== READING ==================== */
@@ -1019,7 +1254,7 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
   btn.onclick = ()=>{
     document.querySelectorAll(".tab-btn").forEach(b=> b.classList.remove("active"));
     btn.classList.add("active");
-    ["tasks","exercise","reading","stats"].forEach(name=>{
+    ["tasks","exercise","reading","budget","stats"].forEach(name=>{
       document.getElementById("panel-"+name).style.display = (name === btn.dataset.tab) ? "block" : "none";
     });
   };
@@ -1032,6 +1267,7 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
   await refreshBalance();
   await refreshWorkouts();
   await refreshDocs();
+  await refreshBudget();
   if("serviceWorker" in navigator){
     navigator.serviceWorker.register("sw.js").catch(()=>{});
   }
