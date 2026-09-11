@@ -1,4 +1,4 @@
-const CACHE_NAME = "ledger-cache-v6";
+const CACHE_NAME = "ledger-cache-v7";
 const CORE_FILES = [
   "./index.html",
   "./manifest.json",

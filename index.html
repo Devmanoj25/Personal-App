@@ -1096,13 +1096,20 @@ async function renderPdfPage(wrap, pageNum){
   const page = await currentPdfProxy.getPage(pageNum);
   const bodyWidth = document.getElementById("readerBody").clientWidth - 32;
   const baseViewport = page.getViewport({scale:1});
-  const scale = Math.min((bodyWidth) / baseViewport.width, 1.6);
+  const scale = Math.min((bodyWidth) / baseViewport.width, 2.2);
   const viewport = page.getViewport({scale});
-  const dpr = window.devicePixelRatio || 1;
+  let dpr = window.devicePixelRatio || 1;
+  // Cap total backing-store width so low-power phones don't choke on huge canvases,
+  // while still rendering well above the CSS display size for sharpness.
+  const MAX_BACKING_WIDTH = 2200;
+  if(viewport.width * dpr > MAX_BACKING_WIDTH){
+    dpr = MAX_BACKING_WIDTH / viewport.width;
+  }
+  dpr = Math.max(dpr, 1.5); // always oversample at least 1.5x even on standard-density screens
 
   const canvas = document.createElement("canvas");
-  canvas.width = viewport.width * dpr;
-  canvas.height = viewport.height * dpr;
+  canvas.width = Math.round(viewport.width * dpr);
+  canvas.height = Math.round(viewport.height * dpr);
   canvas.style.width = viewport.width + "px";
   canvas.style.height = viewport.height + "px";
   wrap.style.width = viewport.width+"px";
@@ -1110,6 +1117,8 @@ async function renderPdfPage(wrap, pageNum){
   wrap.appendChild(canvas);
   const ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   await page.render({canvasContext:ctx, viewport}).promise;
 
   const textLayer = document.createElement("div");
