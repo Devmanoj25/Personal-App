@@ -236,8 +236,6 @@
 
   /* Reader */
   .reader-overlay{
-    --ink:#F4ECD8; --panel:#FBF6EA; --panel-2:#EFE6D0; --text:#3B2F1E;
-    --text-dim:#8A7A5C; --line:#DCCFAF; --gold:#8B5E3C; --gold-dim:#C7B08A;
     position:fixed; inset:0; background:var(--ink); display:none; flex-direction:column; z-index:70;
   }
   .reader-overlay.open{display:flex;}
@@ -251,11 +249,11 @@
     background:var(--panel-2); padding:16px;
   }
   .page-wrap{
-    position:relative; background:#FBF6EA; box-shadow:0 6px 30px rgba(59,47,30,0.3);
+    position:relative; background:var(--panel); box-shadow:0 6px 30px rgba(0,0,0,0.5);
     transition:opacity 0.18s ease; max-width:100%;
   }
   .docx-page{
-    background:#FBF6EA; color:#2B2114; padding:28px 22px; width:100%; max-width:640px;
+    background:var(--panel); color:var(--text); padding:28px 22px; width:100%; max-width:640px;
     font-family:Georgia,serif; font-size:15px; line-height:1.6; min-height:60vh;
     border-radius:4px;
   }
@@ -268,7 +266,7 @@
     color:transparent; position:absolute; white-space:pre; transform-origin:0% 0%;
     cursor:text;
   }
-  .text-layer mark{ background:rgba(139,94,60,0.35); }
+  .text-layer mark{ background:rgba(61,219,255,0.35); }
   .reader-navzone{ position:absolute; top:0; bottom:0; width:30%; z-index:5; }
   .reader-navzone.left{left:0;} .reader-navzone.right{right:0;}
   .reader-bottombar{
@@ -285,7 +283,6 @@
 
   /* Notes drawer */
   .notes-drawer{
-    --panel:#FBF6EA; --panel-2:#EFE6D0; --text:#3B2F1E; --text-dim:#8A7A5C; --line:#DCCFAF; --gold:#8B5E3C;
     position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:flex-end; z-index:75;
   }
   .notes-drawer.open{display:flex;}
@@ -313,9 +310,7 @@
   .cat-dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; flex-shrink:0; }
 
   #screen-reading{
-    --ink:#F4ECD8; --panel:#FBF6EA; --panel-2:#EFE6D0; --text:#3B2F1E;
-    --text-dim:#8A7A5C; --line:#DCCFAF; --gold:#8B5E3C; --gold-dim:#C7B08A;
-    background:var(--ink); min-height:100vh;
+    min-height:100vh;
   }
   #screen-reading .screen-topbar .back-btn{ background:var(--panel-2); color:var(--gold); }
   #screen-reading .small-add-btn{ background:var(--panel-2); color:var(--gold); border-color:var(--line); }
@@ -1104,12 +1099,12 @@ async function refreshDocs(){
     return;
   }
   docs.sort((a,b)=> (b.addedAt||0)-(a.addedAt||0));
-  const spineColors = ["#8B5E3C","#3D6B8B","#6B8B3D","#8B3D5E","#5E3D8B"];
+  const spineColors = ["#3DDBFF","#8B5CF6","#33D17A","#FF6B35","#FFC93D"];
   docs.forEach((doc,idx)=>{
     const pct = doc.totalPages ? Math.round(((doc.currentPage||1)/doc.totalPages)*100) : 0;
     const cover = document.createElement("div");
     cover.className = "kindle-cover";
-    cover.style.background = `linear-gradient(160deg, ${spineColors[idx%spineColors.length]}, #2C2013)`;
+    cover.style.background = `linear-gradient(160deg, ${spineColors[idx%spineColors.length]}, #0D1220)`;
     cover.innerHTML = `
       <button class="kc-del" title="Delete">✕</button>
       <div class="kc-type">${doc.type === "pdf" ? "PDF" : "Word doc"}</div>
