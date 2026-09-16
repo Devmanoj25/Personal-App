@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#D6E9FB">
+<meta name="theme-color" content="#070A12">
 <title>Dev's App</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
@@ -12,27 +12,31 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
   :root{
-    --ink:#D6E9FB;
-    --panel:#FFFFFF;
-    --panel-2:#E7F2FC;
-    --gold:#0077FF;
-    --gold-dim:#86B9F7;
-    --green:#3F9469;
-    --red:#C1493E;
-    --blue:#7C5CBF;
-    --text:#16324F;
-    --text-dim:#5C7A99;
-    --line:#BFDBF7;
+    --ink:#070A12;
+    --panel:#0D1220;
+    --panel-2:#141B2E;
+    --gold:#3DDBFF;
+    --gold-dim:#1C5A73;
+    --green:#33D17A;
+    --red:#FF3B57;
+    --blue:#8B5CF6;
+    --text:#E6F1FF;
+    --text-dim:#6C7A94;
+    --line:#1E2A42;
     --radius:14px;
+    --glow: 0 0 18px rgba(61,219,255,0.12), inset 0 0 0 1px rgba(61,219,255,0.18);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--ink);
+    background:
+      radial-gradient(circle at 15% 0%, rgba(61,219,255,0.07), transparent 40%),
+      radial-gradient(circle at 90% 15%, rgba(139,92,246,0.08), transparent 45%),
+      var(--ink);
     color:var(--text);
     font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     min-height:100vh;
-    padding-bottom:84px;
+    padding-bottom:24px;
     overscroll-behavior-y:none;
   }
   h1,h2,h3,.serif{
@@ -40,15 +44,18 @@
     font-weight:600;
     letter-spacing:0.01em;
   }
+  .hud-cut{
+    clip-path: polygon(0 10px, 10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+  }
   header.top{
     padding:22px 20px 18px;
     border-bottom:1px solid var(--line);
   }
-  .eyebrow{ color:var(--text-dim); font-size:13px; margin:0 0 4px; }
+  .eyebrow{ color:var(--text-dim); font-size:12px; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.08em; }
   .balance-row{ display:flex; align-items:baseline; gap:10px; margin-top:6px; }
   .balance-amount{
-    font-size:44px; font-family:"Spectral",Georgia,serif; font-weight:600;
-    color:var(--gold); line-height:1;
+    font-size:40px; font-family:"Spectral",Georgia,serif; font-weight:600;
+    color:var(--gold); line-height:1; text-shadow:0 0 18px rgba(61,219,255,0.35);
   }
   .balance-sub{ font-size:13px; color:var(--text-dim); }
   .redeem-btn{
@@ -56,7 +63,51 @@
     color:var(--gold); padding:8px 14px; border-radius:999px; font-size:13px;
     font-family:inherit; cursor:pointer;
   }
-  .redeem-btn:active{background:rgba(0,119,255,0.1);}
+  .redeem-btn:active{background:rgba(61,219,255,0.1);}
+
+  /* ---------- Home dashboard ---------- */
+  .app-header{
+    padding:26px 20px 6px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .app-title{
+    font-family:"Spectral",Georgia,serif; font-size:22px; letter-spacing:0.03em;
+    color:var(--text);
+  }
+  .app-title .accent{ color:var(--gold); text-shadow:0 0 14px rgba(61,219,255,0.5); }
+  .app-sub{ color:var(--text-dim); font-size:12.5px; margin-top:2px; letter-spacing:0.04em; text-transform:uppercase; }
+  .home-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:18px 20px 30px;
+  }
+  .home-card{
+    background:linear-gradient(160deg, var(--panel-2), var(--panel));
+    border:1px solid var(--line); box-shadow:var(--glow);
+    padding:18px 16px; cursor:pointer; position:relative; overflow:hidden;
+    min-height:132px; display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .home-card:active{ transform:scale(0.98); }
+  .home-card .hc-icon{ font-size:26px; }
+  .home-card .hc-title{
+    font-family:"Spectral",Georgia,serif; font-size:16px; margin-top:10px; color:var(--text);
+    letter-spacing:0.02em;
+  }
+  .home-card .hc-stat{ font-size:12px; color:var(--gold); margin-top:6px; font-weight:600; }
+  .home-card::after{
+    content:""; position:absolute; top:0; right:0; width:26px; height:26px;
+    background:linear-gradient(135deg, transparent 50%, rgba(61,219,255,0.15) 50%);
+  }
+
+  .screen-topbar{
+    display:flex; align-items:center; gap:12px; padding:18px 20px 6px;
+  }
+  .screen-topbar .back-btn{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--gold);
+    width:36px; height:36px; border-radius:50%; font-size:17px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .screen-topbar .screen-title{
+    font-family:"Spectral",Georgia,serif; font-size:19px; letter-spacing:0.02em;
+  }
 
   main{padding:20px;}
   .section-title{
@@ -106,23 +157,13 @@
   }
 
   .fab{
-    position:fixed; right:20px; bottom:96px; width:56px;height:56px; border-radius:50%;
-    background:var(--gold); color:#FFFFFF; border:none; font-size:28px;
-    box-shadow:0 6px 18px rgba(0,0,0,0.4); cursor:pointer; z-index:20;
+    position:fixed; right:20px; bottom:26px; width:56px;height:56px; border-radius:50%;
+    background:var(--gold); color:#05141A; border:none; font-size:28px; font-weight:700;
+    box-shadow:0 0 22px rgba(61,219,255,0.55); cursor:pointer; z-index:20;
   }
 
-  nav.tabbar{
-    position:fixed; bottom:0;left:0;right:0; background:var(--panel);
-    border-top:1px solid var(--line); display:flex;
-    padding:8px 6px calc(8px + env(safe-area-inset-bottom)); z-index:20;
-  }
-  nav.tabbar button{
-    flex:1; background:none; border:none; color:var(--text-dim); font-family:inherit;
-    font-size:11.5px; padding:6px 2px; cursor:pointer; display:flex; flex-direction:column;
-    align-items:center; gap:4px;
-  }
-  nav.tabbar button .ic{font-size:19px;}
-  nav.tabbar button.active{color:var(--gold);}
+  .screen{ display:none; padding-bottom:40px; }
+  .screen.active{ display:block; }
 
   .soon-panel{ text-align:center; padding:60px 20px; color:var(--text-dim); }
   .soon-panel .serif{font-size:19px;color:var(--text);margin-bottom:8px;}
@@ -195,6 +236,8 @@
 
   /* Reader */
   .reader-overlay{
+    --ink:#F4ECD8; --panel:#FBF6EA; --panel-2:#EFE6D0; --text:#3B2F1E;
+    --text-dim:#8A7A5C; --line:#DCCFAF; --gold:#8B5E3C; --gold-dim:#C7B08A;
     position:fixed; inset:0; background:var(--ink); display:none; flex-direction:column; z-index:70;
   }
   .reader-overlay.open{display:flex;}
@@ -205,14 +248,14 @@
   .reader-title{ flex:1; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .reader-body{
     flex:1; overflow:auto; position:relative; display:flex; align-items:flex-start; justify-content:center;
-    background:#C9E0F7; padding:16px;
+    background:var(--panel-2); padding:16px;
   }
   .page-wrap{
-    position:relative; background:#fff; box-shadow:0 6px 30px rgba(0,0,0,0.5);
+    position:relative; background:#FBF6EA; box-shadow:0 6px 30px rgba(59,47,30,0.3);
     transition:opacity 0.18s ease; max-width:100%;
   }
   .docx-page{
-    background:#fff; color:#16324F; padding:28px 22px; width:100%; max-width:640px;
+    background:#FBF6EA; color:#2B2114; padding:28px 22px; width:100%; max-width:640px;
     font-family:Georgia,serif; font-size:15px; line-height:1.6; min-height:60vh;
     border-radius:4px;
   }
@@ -225,7 +268,7 @@
     color:transparent; position:absolute; white-space:pre; transform-origin:0% 0%;
     cursor:text;
   }
-  .text-layer mark{ background:rgba(0,119,255,0.35); }
+  .text-layer mark{ background:rgba(139,94,60,0.35); }
   .reader-navzone{ position:absolute; top:0; bottom:0; width:30%; z-index:5; }
   .reader-navzone.left{left:0;} .reader-navzone.right{right:0;}
   .reader-bottombar{
@@ -242,6 +285,7 @@
 
   /* Notes drawer */
   .notes-drawer{
+    --panel:#FBF6EA; --panel-2:#EFE6D0; --text:#3B2F1E; --text-dim:#8A7A5C; --line:#DCCFAF; --gold:#8B5E3C;
     position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:flex-end; z-index:75;
   }
   .notes-drawer.open{display:flex;}
@@ -254,51 +298,158 @@
   }
   .note-item .np{ color:var(--text-dim); font-size:11px; margin-bottom:4px; }
   .upload-hint{ font-size:12px; color:var(--text-dim); margin:-4px 0 16px; }
+
+  /* ---------- Per-screen theme scoping ---------- */
+  #screen-exercise{
+    --gold:#FF6B35; --gold-dim:#8C3B18;
+  }
+  #screen-exercise .home-card::after{ display:none; }
+  #screen-exercise .hud-badge{
+    display:inline-block; background:rgba(255,107,53,0.15); color:#FF6B35;
+    border:1px solid rgba(255,107,53,0.4); border-radius:6px; padding:2px 8px;
+    font-size:11px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+  }
+  #screen-budget{ --gold:#33D17A; --gold-dim:#186B3C; }
+  .cat-dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; flex-shrink:0; }
+
+  #screen-reading{
+    --ink:#F4ECD8; --panel:#FBF6EA; --panel-2:#EFE6D0; --text:#3B2F1E;
+    --text-dim:#8A7A5C; --line:#DCCFAF; --gold:#8B5E3C; --gold-dim:#C7B08A;
+    background:var(--ink); min-height:100vh;
+  }
+  #screen-reading .screen-topbar .back-btn{ background:var(--panel-2); color:var(--gold); }
+  #screen-reading .small-add-btn{ background:var(--panel-2); color:var(--gold); border-color:var(--line); }
+  .kindle-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .kindle-cover{
+    background:linear-gradient(160deg, var(--gold), var(--gold-dim));
+    border-radius:6px 10px 10px 6px; box-shadow:0 6px 14px rgba(59,47,30,0.25);
+    padding:16px 12px; min-height:150px; display:flex; flex-direction:column;
+    justify-content:space-between; cursor:pointer; position:relative;
+  }
+  .kindle-cover::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:6px;
+    background:rgba(0,0,0,0.15); border-radius:6px 0 0 6px;
+  }
+  .kindle-cover .kc-type{ font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.8); }
+  .kindle-cover .kc-title{
+    font-family:Georgia,serif; font-size:14px; color:#fff; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .kindle-cover .kc-progress{ font-size:10.5px; color:rgba(255,255,255,0.85); }
+  .kindle-cover .kc-del{
+    position:absolute; top:6px; right:8px; background:rgba(0,0,0,0.25); border:none;
+    color:#fff; width:22px; height:22px; border-radius:50%; font-size:12px; cursor:pointer;
+  }
 </style>
 </head>
 <body>
 
-<header class="top">
-  <p class="eyebrow">Today's balance</p>
-  <div class="balance-row">
-    <div class="balance-amount" id="balanceAmount">₹0</div>
-    <div class="balance-sub">available to spend on yourself</div>
+<div id="screen-home" class="screen active">
+  <div class="app-header">
+    <div>
+      <div class="app-title">Dev's <span class="accent">App</span></div>
+      <div class="app-sub">Daily Quest Log</div>
+    </div>
   </div>
-  <button class="redeem-btn" id="redeemBtn">Redeem reward</button>
-</header>
+  <div class="home-grid">
+    <div class="home-card hud-cut" id="homeCardTasks">
+      <div class="hc-icon">☑</div>
+      <div>
+        <div class="hc-title">Tasks</div>
+        <div class="hc-stat" id="homeStatTasks">–</div>
+      </div>
+    </div>
+    <div class="home-card hud-cut" id="homeCardExercise">
+      <div class="hc-icon">🏃</div>
+      <div>
+        <div class="hc-title">Exercise</div>
+        <div class="hc-stat" id="homeStatExercise">–</div>
+      </div>
+    </div>
+    <div class="home-card hud-cut" id="homeCardReading">
+      <div class="hc-icon">📖</div>
+      <div>
+        <div class="hc-title">Reading</div>
+        <div class="hc-stat" id="homeStatReading">–</div>
+      </div>
+    </div>
+    <div class="home-card hud-cut" id="homeCardBudget">
+      <div class="hc-icon">💰</div>
+      <div>
+        <div class="hc-title">Budget</div>
+        <div class="hc-stat" id="homeStatBudget">–</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<main>
-  <div id="panel-tasks">
+<div id="screen-tasks" class="screen">
+  <div class="screen-topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div class="screen-title serif">Tasks</div>
+  </div>
+  <header class="top" style="border-bottom:none; padding-bottom:4px;">
+    <p class="eyebrow">Today's balance</p>
+    <div class="balance-row">
+      <div class="balance-amount" id="balanceAmount">₹0</div>
+      <div class="balance-sub">available to spend on yourself</div>
+    </div>
+    <button class="redeem-btn" id="redeemBtn">Redeem reward</button>
+  </header>
+  <main style="padding-top:6px;">
     <div class="section-title">Today's tasks <span class="date-label" id="todayLabel"></span></div>
     <div id="taskList"></div>
-  </div>
+  </main>
+  <button class="fab" id="addTaskFab" title="Add task">+</button>
+</div>
 
-  <div id="panel-exercise" style="display:none;">
+<div id="screen-exercise" class="screen">
+  <div class="screen-topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div class="screen-title serif">Exercise</div>
+  </div>
+  <main>
     <div class="section-title">
-      Workouts
+      <span class="hud-badge">Workout log</span>
       <button class="small-add-btn" id="addWorkoutBtn">+ Add workout</button>
     </div>
     <div id="workoutList"></div>
-  </div>
+  </main>
+</div>
 
-  <div id="panel-reading" style="display:none;">
+<div id="screen-reading" class="screen">
+  <div class="screen-topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div class="screen-title serif">Reading</div>
+  </div>
+  <main>
     <div class="section-title">
-      Reading vault
+      My library
       <button class="small-add-btn" id="uploadDocBtn">+ Upload</button>
     </div>
     <p class="upload-hint">Supports PDF and Word (.docx) files.</p>
     <input type="file" id="fileInput" accept=".pdf,.docx" style="display:none;">
-    <div id="docList"></div>
-  </div>
+    <div id="docList" class="kindle-grid"></div>
+  </main>
+</div>
 
-  <div id="panel-budget" style="display:none;">
+<div id="screen-budget" class="screen">
+  <div class="screen-topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div class="screen-title serif">Budget</div>
+  </div>
+  <main>
     <div class="task-card" style="flex-direction:column; align-items:flex-start; gap:6px;">
       <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
         <div>
-          <p class="eyebrow" style="margin:0;">Total amount to budget</p>
-          <div class="balance-amount" id="budgetTotalAmount" style="font-size:30px;">₹0</div>
+          <p class="eyebrow" style="margin:0;">Original budget amount</p>
+          <div class="balance-amount" id="budgetTotalAmount" style="font-size:26px;">₹0</div>
         </div>
         <button class="small-add-btn" id="editTotalBtn">Edit</button>
+      </div>
+      <div style="width:100%; border-top:1px solid var(--line); margin-top:8px; padding-top:8px;">
+        <p class="eyebrow" style="margin:0;">Current balance (after all spends)</p>
+        <div class="balance-amount" id="budgetCurrentBalance" style="font-size:30px;">₹0</div>
       </div>
       <div class="doc-sub" id="allocatedSummary" style="margin-top:2px;"></div>
     </div>
@@ -308,23 +459,8 @@
       <button class="small-add-btn" id="addCategoryBtn">+ Add category</button>
     </div>
     <div id="categoryList"></div>
-  </div>
-
-  <div id="panel-stats" class="soon-panel" style="display:none;">
-    <div class="serif">Stats</div>
-    Streaks and history charts — coming in a future update.
-  </div>
-</main>
-
-<button class="fab" id="addTaskFab" title="Add task">+</button>
-
-<nav class="tabbar">
-  <button class="tab-btn active" data-tab="tasks"><span class="ic">☑</span>Tasks</button>
-  <button class="tab-btn" data-tab="exercise"><span class="ic">🏃</span>Exercise</button>
-  <button class="tab-btn" data-tab="reading"><span class="ic">📖</span>Reading</button>
-  <button class="tab-btn" data-tab="budget"><span class="ic">💰</span>Budget</button>
-  <button class="tab-btn" data-tab="stats"><span class="ic">📊</span>Stats</button>
-</nav>
+  </main>
+</div>
 
 <!-- Add/Edit Task Modal -->
 <div class="modal-backdrop" id="taskModalBackdrop">
@@ -445,6 +581,8 @@
     <button class="reader-toolbtn" id="prevPageBtn">‹ Prev</button>
     <div class="page-indicator" id="pageIndicator">–</div>
     <div class="highlight-swatches">
+      <button class="icon-btn" id="zoomOutBtn" style="font-size:18px;">−</button>
+      <button class="icon-btn" id="zoomInBtn" style="font-size:18px;">+</button>
       <div class="swatch" style="background:#0077FF" data-color="rgba(0,119,255,0.35)"></div>
       <div class="swatch" style="background:#4C9A6B" data-color="rgba(76,154,107,0.55)"></div>
       <div class="swatch" style="background:#7C5CBF" data-color="rgba(124,92,191,0.4)"></div>
@@ -796,6 +934,12 @@ async function refreshBudget(){
   budgetExpenses = await getAll("budgetExpenses");
   document.getElementById("budgetTotalAmount").textContent = "₹" + budgetTotal;
 
+  const totalSpentAll = budgetExpenses.reduce((s,e)=> s + e.amount, 0);
+  const currentBalance = budgetTotal - totalSpentAll;
+  const balEl = document.getElementById("budgetCurrentBalance");
+  balEl.textContent = "₹" + currentBalance;
+  balEl.style.color = currentBalance < 0 ? "var(--red)" : "var(--gold)";
+
   const allocatedPercent = budgetCategories.reduce((s,c)=> s + c.percent, 0);
   const summaryEl = document.getElementById("allocatedSummary");
   summaryEl.textContent = `${allocatedPercent}% of total allocated across ${budgetCategories.length} categor${budgetCategories.length===1?"y":"ies"}`;
@@ -811,7 +955,9 @@ function renderCategoryList(){
     list.innerHTML = '<div class="empty-state">No categories yet. Add one (e.g. Fuel, EMI, LIC) to start budgeting.</div>';
     return;
   }
-  budgetCategories.forEach(cat=>{
+  const palette = ["#33D17A","#3DDBFF","#FF6B35","#8B5CF6","#FFC93D","#FF3B57","#33B5D1"];
+  budgetCategories.forEach((cat,idx)=>{
+    const color = palette[idx % palette.length];
     const allocated = Math.round(budgetTotal * cat.percent / 100);
     const spent = budgetExpenses.filter(e=> e.categoryId === cat.id).reduce((s,e)=> s + e.amount, 0);
     const over = spent > allocated;
@@ -822,7 +968,7 @@ function renderCategoryList(){
     card.style.cursor = "pointer";
     card.innerHTML = `
       <div class="task-info">
-        <p class="task-name">${escapeHtml(cat.name)} <span class="tag">${cat.percent}%</span></p>
+        <p class="task-name"><span class="cat-dot" style="background:${color};"></span>${escapeHtml(cat.name)} <span class="tag">${cat.percent}%</span></p>
         <div class="task-meta">
           <span>Allocated ₹${allocated}</span>
           <span>·</span>
@@ -831,7 +977,7 @@ function renderCategoryList(){
           </span>
         </div>
         <div class="progress-track" style="margin-top:8px;">
-          <div class="progress-fill" style="width:${Math.min(pct,100)}%; background:${over ? "var(--red)" : "var(--gold)"};"></div>
+          <div class="progress-fill" style="width:${Math.min(pct,100)}%; background:${over ? "var(--red)" : color};"></div>
         </div>
       </div>`;
     card.onclick = ()=> openCategoryDetail(cat.id);
@@ -947,40 +1093,39 @@ document.getElementById("deleteCategoryBtn").onclick = async ()=>{
 let currentDoc = null;      // full document record from DB
 let currentPdfProxy = null; // pdf.js document proxy
 let currentPageNum = 1;
+let zoomFactor = 1;
 
 async function refreshDocs(){
   const docs = await getAll("documents");
   const list = document.getElementById("docList");
   list.innerHTML = "";
   if(docs.length === 0){
-    list.innerHTML = '<div class="empty-state">No documents yet. Tap Upload to add a PDF or Word file.</div>';
+    list.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">No documents yet. Tap Upload to add a PDF or Word file.</div>';
     return;
   }
   docs.sort((a,b)=> (b.addedAt||0)-(a.addedAt||0));
-  docs.forEach(doc=>{
+  const spineColors = ["#8B5E3C","#3D6B8B","#6B8B3D","#8B3D5E","#5E3D8B"];
+  docs.forEach((doc,idx)=>{
     const pct = doc.totalPages ? Math.round(((doc.currentPage||1)/doc.totalPages)*100) : 0;
-    const card = document.createElement("div");
-    card.className = "doc-card";
-    card.innerHTML = `
-      <div class="doc-icon">${doc.type === "pdf" ? "PDF" : "DOC"}</div>
-      <div class="doc-info">
-        <p class="doc-title">${escapeHtml(doc.title)}</p>
-        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div class="doc-sub">Page ${doc.currentPage||1} of ${doc.totalPages||"?"} · ${pct}%</div>
-      </div>
-      <button class="icon-btn" title="Delete">✕</button>`;
-    card.querySelector(".icon-btn").onclick = async (e)=>{
+    const cover = document.createElement("div");
+    cover.className = "kindle-cover";
+    cover.style.background = `linear-gradient(160deg, ${spineColors[idx%spineColors.length]}, #2C2013)`;
+    cover.innerHTML = `
+      <button class="kc-del" title="Delete">✕</button>
+      <div class="kc-type">${doc.type === "pdf" ? "PDF" : "Word doc"}</div>
+      <div class="kc-title">${escapeHtml(doc.title)}</div>
+      <div class="kc-progress">Page ${doc.currentPage||1} of ${doc.totalPages||"?"} · ${pct}% read</div>`;
+    cover.querySelector(".kc-del").onclick = async (e)=>{
       e.stopPropagation();
       await del("documents", doc.id);
-      const hs = await getAllFromIndex("highlights","docPage",[doc.id, 1]); // best-effort; full cleanup below
       const allHi = await getAll("highlights");
       for(const h of allHi.filter(h=>h.docId===doc.id)) await del("highlights", h.id);
       const allNotes = await getAll("notes");
       for(const n of allNotes.filter(n=>n.docId===doc.id)) await del("notes", n.id);
       await refreshDocs();
     };
-    card.onclick = ()=> openReader(doc.id);
-    list.appendChild(card);
+    cover.onclick = ()=> openReader(doc.id);
+    list.appendChild(cover);
   });
 }
 
@@ -1046,6 +1191,7 @@ async function openReader(docId){
   currentDoc = await getOne("documents", docId);
   if(!currentDoc) return;
   currentPageNum = currentDoc.currentPage || 1;
+  zoomFactor = 1;
   document.getElementById("readerTitle").textContent = currentDoc.title;
   document.getElementById("readerOverlay").classList.add("open");
   if(currentDoc.type === "pdf"){
@@ -1056,13 +1202,22 @@ async function openReader(docId){
   await renderCurrentPage();
 }
 
+document.getElementById("zoomInBtn").onclick = async ()=>{
+  zoomFactor = Math.min(zoomFactor + 0.25, 3);
+  await renderCurrentPage();
+};
+document.getElementById("zoomOutBtn").onclick = async ()=>{
+  zoomFactor = Math.max(zoomFactor - 0.25, 1);
+  await renderCurrentPage();
+};
+
 document.getElementById("readerBackBtn").onclick = ()=>{
   document.getElementById("readerOverlay").classList.remove("open");
   currentDoc = null; currentPdfProxy = null;
   refreshDocs();
 };
-document.getElementById("navLeft").onclick = ()=> changePage(-1);
-document.getElementById("navRight").onclick = ()=> changePage(1);
+document.getElementById("navLeft").onclick = ()=>{ if(zoomFactor === 1) changePage(-1); };
+document.getElementById("navRight").onclick = ()=>{ if(zoomFactor === 1) changePage(1); };
 document.getElementById("prevPageBtn").onclick = ()=> changePage(-1);
 document.getElementById("nextPageBtn").onclick = ()=> changePage(1);
 
@@ -1071,6 +1226,7 @@ async function changePage(delta){
   if(newPage < 1 || newPage > currentDoc.totalPages) return;
   currentPageNum = newPage;
   currentDoc.currentPage = newPage;
+  zoomFactor = 1;
   await put("documents", currentDoc);
   await renderCurrentPage();
 }
@@ -1086,6 +1242,7 @@ async function renderCurrentPage(){
   } else {
     const div = document.createElement("div");
     div.className = "docx-page";
+    div.style.fontSize = (15 * zoomFactor) + "px";
     div.innerHTML = currentDoc.pagesHtml[currentPageNum-1] || "";
     wrap.appendChild(div);
   }
@@ -1096,16 +1253,16 @@ async function renderPdfPage(wrap, pageNum){
   const page = await currentPdfProxy.getPage(pageNum);
   const bodyWidth = document.getElementById("readerBody").clientWidth - 32;
   const baseViewport = page.getViewport({scale:1});
-  const scale = Math.min((bodyWidth) / baseViewport.width, 2.2);
-  const viewport = page.getViewport({scale});
+  const fitScale = Math.min((bodyWidth) / baseViewport.width, 2.2);
+  const viewport = page.getViewport({scale: fitScale * zoomFactor});
   let dpr = window.devicePixelRatio || 1;
   // Cap total backing-store width so low-power phones don't choke on huge canvases,
   // while still rendering well above the CSS display size for sharpness.
-  const MAX_BACKING_WIDTH = 2200;
+  const MAX_BACKING_WIDTH = 3200;
   if(viewport.width * dpr > MAX_BACKING_WIDTH){
     dpr = MAX_BACKING_WIDTH / viewport.width;
   }
-  dpr = Math.max(dpr, 1.5); // always oversample at least 1.5x even on standard-density screens
+  dpr = Math.max(dpr, 3); // always oversample generously, even on standard-density screens
 
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(viewport.width * dpr);
@@ -1262,16 +1419,53 @@ async function renderNotes(){
   });
 }
 
-/* ---------- tabs ---------- */
-document.querySelectorAll(".tab-btn").forEach(btn=>{
-  btn.onclick = ()=>{
-    document.querySelectorAll(".tab-btn").forEach(b=> b.classList.remove("active"));
-    btn.classList.add("active");
-    ["tasks","exercise","reading","budget","stats"].forEach(name=>{
-      document.getElementById("panel-"+name).style.display = (name === btn.dataset.tab) ? "block" : "none";
-    });
-  };
-});
+/* ---------- screen navigation ---------- */
+function showScreen(name){
+  document.querySelectorAll(".screen").forEach(s=> s.classList.remove("active"));
+  document.getElementById("screen-"+name).classList.add("active");
+}
+function goHome(){
+  document.querySelectorAll(".screen").forEach(s=> s.classList.remove("active"));
+  document.getElementById("screen-home").classList.add("active");
+  renderHomeStats();
+}
+document.getElementById("homeCardTasks").onclick = ()=> showScreen("tasks");
+document.getElementById("homeCardExercise").onclick = ()=> showScreen("exercise");
+document.getElementById("homeCardReading").onclick = ()=> showScreen("reading");
+document.getElementById("homeCardBudget").onclick = ()=> showScreen("budget");
+
+async function renderHomeStats(){
+  const completions = await getAll("completions");
+  const redemptions = await getAll("redemptions");
+  const earned = completions.reduce((s,c)=> s + c.points, 0);
+  const spent = redemptions.reduce((s,r)=> s + r.amount, 0);
+  const today = todayStr();
+  const doneToday = completions.filter(c=> c.date === today).length;
+  const totalTasks = (await getAll("tasks")).length;
+  document.getElementById("homeStatTasks").textContent =
+    totalTasks ? `${doneToday}/${totalTasks} done · ₹${earned-spent} balance` : "No tasks yet";
+
+  const workouts = await getAll("workouts");
+  document.getElementById("homeStatExercise").textContent =
+    workouts.length ? `${workouts.length} workout${workouts.length===1?"":"s"} logged` : "No workouts yet";
+
+  const docs = await getAll("documents");
+  if(docs.length){
+    docs.sort((a,b)=> (b.addedAt||0)-(a.addedAt||0));
+    const d = docs[0];
+    const pct = d.totalPages ? Math.round(((d.currentPage||1)/d.totalPages)*100) : 0;
+    document.getElementById("homeStatReading").textContent = `${pct}% through "${d.title}"`;
+  } else {
+    document.getElementById("homeStatReading").textContent = "No documents yet";
+  }
+
+  const settings = await getOne("budgetSettings", "main");
+  const expenses = await getAll("budgetExpenses");
+  const total = settings ? settings.totalAmount : 0;
+  const totalSpent = expenses.reduce((s,e)=> s + e.amount, 0);
+  document.getElementById("homeStatBudget").textContent =
+    total ? `₹${total-totalSpent} balance left` : "Not set up yet";
+}
 
 /* ---------- init ---------- */
 (async function init(){
@@ -1281,6 +1475,7 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
   await refreshWorkouts();
   await refreshDocs();
   await refreshBudget();
+  await renderHomeStats();
   if("serviceWorker" in navigator){
     navigator.serviceWorker.register("sw.js").catch(()=>{});
   }
