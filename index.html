@@ -308,6 +308,24 @@
   }
   #screen-budget{ --gold:#33D17A; --gold-dim:#186B3C; }
   .cat-dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; flex-shrink:0; }
+  .budget-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .budget-item-card{
+    background:linear-gradient(160deg, var(--panel-2), var(--panel));
+    border:1px solid var(--line); box-shadow:var(--glow); border-radius:var(--radius);
+    padding:16px 12px; text-align:center; cursor:pointer;
+  }
+  .budget-item-card .bi-name{
+    font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .budget-item-card .bi-allocated{ font-size:11px; color:var(--text-dim); margin-bottom:12px; }
+  .donut{ width:86px; height:86px; border-radius:50%; margin:0 auto; position:relative; }
+  .donut::before{ content:""; position:absolute; inset:10px; background:var(--panel); border-radius:50%; }
+  .donut-label{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:14.5px; z-index:1; color:var(--text);
+  }
+  .bi-spent-line{ font-size:11px; color:var(--text-dim); margin-top:10px; }
 
   #screen-reading{
     min-height:100vh;
@@ -442,10 +460,21 @@
         </div>
         <button class="small-add-btn" id="editTotalBtn">Edit</button>
       </div>
-      <div style="width:100%; border-top:1px solid var(--line); margin-top:8px; padding-top:8px;">
-        <p class="eyebrow" style="margin:0;">Current balance (after all spends)</p>
-        <div class="balance-amount" id="budgetCurrentBalance" style="font-size:30px;">₹0</div>
+      <div style="display:flex; gap:22px; width:100%; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); flex-wrap:wrap;">
+        <div>
+          <p class="eyebrow" style="margin:0;">Current balance</p>
+          <div class="balance-amount" id="budgetCurrentBalance" style="font-size:21px;">₹0</div>
+        </div>
+        <div>
+          <p class="eyebrow" style="margin:0;">Total spent</p>
+          <div class="balance-amount" id="budgetTotalSpent" style="font-size:21px; color:var(--blue);">₹0</div>
+        </div>
+        <div>
+          <p class="eyebrow" style="margin:0;">% of budget used</p>
+          <div class="balance-amount" id="budgetSpentPercent" style="font-size:21px;">0%</div>
+        </div>
       </div>
+      <div class="doc-sub" id="budgetDateLabel" style="margin-top:10px;"></div>
       <div class="doc-sub" id="allocatedSummary" style="margin-top:2px;"></div>
     </div>
 
@@ -453,7 +482,7 @@
       Categories
       <button class="small-add-btn" id="addCategoryBtn">+ Add category</button>
     </div>
-    <div id="categoryList"></div>
+    <div id="categoryList" class="budget-grid"></div>
   </main>
 </div>
 
@@ -935,6 +964,14 @@ async function refreshBudget(){
   balEl.textContent = "₹" + currentBalance;
   balEl.style.color = currentBalance < 0 ? "var(--red)" : "var(--gold)";
 
+  document.getElementById("budgetTotalSpent").textContent = "₹" + totalSpentAll;
+  const spentPct = budgetTotal > 0 ? Math.round((totalSpentAll/budgetTotal)*100) : 0;
+  const pctEl = document.getElementById("budgetSpentPercent");
+  pctEl.textContent = spentPct + "%";
+  pctEl.style.color = spentPct > 100 ? "var(--red)" : "var(--text)";
+  document.getElementById("budgetDateLabel").textContent =
+    "As of " + new Date().toLocaleDateString(undefined,{month:'long', year:'numeric'});
+
   const allocatedPercent = budgetCategories.reduce((s,c)=> s + c.percent, 0);
   const summaryEl = document.getElementById("allocatedSummary");
   summaryEl.textContent = `${allocatedPercent}% of total allocated across ${budgetCategories.length} categor${budgetCategories.length===1?"y":"ies"}`;
@@ -947,34 +984,27 @@ function renderCategoryList(){
   const list = document.getElementById("categoryList");
   list.innerHTML = "";
   if(budgetCategories.length === 0){
-    list.innerHTML = '<div class="empty-state">No categories yet. Add one (e.g. Fuel, EMI, LIC) to start budgeting.</div>';
+    list.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">No categories yet. Add one (e.g. Fuel, EMI, LIC) to start budgeting.</div>';
     return;
   }
-  const palette = ["#33D17A","#3DDBFF","#FF6B35","#8B5CF6","#FFC93D","#FF3B57","#33B5D1"];
-  budgetCategories.forEach((cat,idx)=>{
-    const color = palette[idx % palette.length];
+  budgetCategories.forEach(cat=>{
     const allocated = Math.round(budgetTotal * cat.percent / 100);
     const spent = budgetExpenses.filter(e=> e.categoryId === cat.id).reduce((s,e)=> s + e.amount, 0);
-    const over = spent > allocated;
-    const pct = allocated > 0 ? Math.min(Math.round((spent/allocated)*100), 999) : (spent>0?999:0);
+    const over = allocated > 0 ? spent > allocated : spent > 0;
+    const pctOfAllocated = allocated > 0 ? Math.round((spent/allocated)*100) : (spent>0 ? 100 : 0);
+    const ringPct = Math.min(pctOfAllocated, 100);
+    const spentColor = over ? "var(--red)" : "var(--blue)";
+    const remainColor = over ? "var(--red)" : "var(--gold)";
 
     const card = document.createElement("div");
-    card.className = "task-card";
-    card.style.cursor = "pointer";
+    card.className = "budget-item-card";
     card.innerHTML = `
-      <div class="task-info">
-        <p class="task-name"><span class="cat-dot" style="background:${color};"></span>${escapeHtml(cat.name)} <span class="tag">${cat.percent}%</span></p>
-        <div class="task-meta">
-          <span>Allocated ₹${allocated}</span>
-          <span>·</span>
-          <span style="color:${over ? "var(--red)" : "var(--green)"}; font-weight:600;">
-            Spent ₹${spent} ${over ? "(over budget)" : ""}
-          </span>
-        </div>
-        <div class="progress-track" style="margin-top:8px;">
-          <div class="progress-fill" style="width:${Math.min(pct,100)}%; background:${over ? "var(--red)" : color};"></div>
-        </div>
-      </div>`;
+      <p class="bi-name">${escapeHtml(cat.name)}</p>
+      <p class="bi-allocated">Allocated ₹${allocated}</p>
+      <div class="donut" style="background:conic-gradient(${spentColor} 0% ${ringPct}%, ${remainColor} ${ringPct}% 100%);">
+        <div class="donut-label" style="color:${over ? "var(--red)" : "var(--text)"};">${pctOfAllocated}%</div>
+      </div>
+      <p class="bi-spent-line">Spent ₹${spent} ${over ? "· over budget" : ""}</p>`;
     card.onclick = ()=> openCategoryDetail(cat.id);
     list.appendChild(card);
   });
