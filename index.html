@@ -458,7 +458,20 @@
           <p class="eyebrow" style="margin:0;">Original budget amount</p>
           <div class="balance-amount" id="budgetTotalAmount" style="font-size:26px;">₹0</div>
         </div>
-        <button class="small-add-btn" id="editTotalBtn">Edit</button>
+        <div style="display:flex; gap:8px;">
+          <button class="small-add-btn" id="addIncomeBtn">+ Income</button>
+          <button class="small-add-btn" id="editTotalBtn">Edit</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:22px; width:100%; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); flex-wrap:wrap;">
+        <div>
+          <p class="eyebrow" style="margin:0;">Additional income</p>
+          <div class="balance-amount" id="budgetExtraIncome" style="font-size:21px; color:var(--green);">+₹0</div>
+        </div>
+        <div>
+          <p class="eyebrow" style="margin:0;">Total budget</p>
+          <div class="balance-amount" id="budgetGrandTotal" style="font-size:21px;">₹0</div>
+        </div>
       </div>
       <div style="display:flex; gap:22px; width:100%; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); flex-wrap:wrap;">
         <div>
@@ -545,6 +558,22 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="cancelTotalBtn">Cancel</button>
       <button class="btn btn-primary" id="saveTotalBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Income Modal -->
+<div class="modal-backdrop" id="incomeModalBackdrop">
+  <div class="modal">
+    <h3 class="serif">Add income received</h3>
+    <div class="field-row">
+      <div class="field"><label>Amount (₹)</label><input type="number" id="incomeAmountInput" min="0" step="1" placeholder="e.g. 5000"></div>
+      <div class="field"><label>Note (optional)</label><input type="text" id="incomeNoteInput" placeholder="e.g. Bonus"></div>
+    </div>
+    <div id="incomeList" style="margin-top:6px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelIncomeBtn">Close</button>
+      <button class="btn btn-primary" id="saveIncomeBtn">Add to budget</button>
     </div>
   </div>
 </div>
@@ -640,7 +669,7 @@ if (window.pdfjsLib) {
 
 /* ---------- IndexedDB setup ---------- */
 const DB_NAME = "routineQuestDB";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 let db;
 
 function openDB(){
@@ -679,6 +708,9 @@ function openDB(){
       }
       if(!_db.objectStoreNames.contains("budgetCategories")){
         _db.createObjectStore("budgetCategories", {keyPath:"id", autoIncrement:true});
+      }
+      if(!_db.objectStoreNames.contains("budgetIncome")){
+        _db.createObjectStore("budgetIncome", {keyPath:"id", autoIncrement:true});
       }
       if(!_db.objectStoreNames.contains("budgetExpenses")){
         const store = _db.createObjectStore("budgetExpenses", {keyPath:"id", autoIncrement:true});
@@ -947,16 +979,24 @@ document.getElementById("saveWorkoutBtn").onclick = async ()=>{
 
 /* ==================== BUDGET ==================== */
 let budgetTotal = 0;
+let budgetOriginal = 0;
+let budgetExtra = 0;
+let budgetIncomes = [];
 let budgetCategories = [];
 let budgetExpenses = [];
 let activeCategoryId = null;
 
 async function refreshBudget(){
   const settings = await getOne("budgetSettings", "main");
-  budgetTotal = settings ? settings.totalAmount : 0;
+  budgetOriginal = settings ? settings.totalAmount : 0;
+  budgetIncomes = await getAll("budgetIncome");
+  budgetExtra = budgetIncomes.reduce((s,i)=> s + i.amount, 0);
+  budgetTotal = budgetOriginal + budgetExtra;
   budgetCategories = await getAll("budgetCategories");
   budgetExpenses = await getAll("budgetExpenses");
-  document.getElementById("budgetTotalAmount").textContent = "₹" + budgetTotal;
+  document.getElementById("budgetTotalAmount").textContent = "₹" + budgetOriginal;
+  document.getElementById("budgetExtraIncome").textContent = "+₹" + budgetExtra;
+  document.getElementById("budgetGrandTotal").textContent = "₹" + budgetTotal;
 
   const totalSpentAll = budgetExpenses.reduce((s,e)=> s + e.amount, 0);
   const currentBalance = budgetTotal - totalSpentAll;
@@ -1013,7 +1053,7 @@ function renderCategoryList(){
 /* total amount modal */
 const totalModal = document.getElementById("totalModalBackdrop");
 document.getElementById("editTotalBtn").onclick = ()=>{
-  document.getElementById("totalAmountInput").value = budgetTotal || "";
+  document.getElementById("totalAmountInput").value = budgetOriginal || "";
   totalModal.classList.add("open");
 };
 document.getElementById("cancelTotalBtn").onclick = ()=> totalModal.classList.remove("open");
@@ -1023,6 +1063,44 @@ document.getElementById("saveTotalBtn").onclick = async ()=>{
   totalModal.classList.remove("open");
   showToast("Total amount updated");
   await refreshBudget();
+};
+
+/* additional income modal */
+const incomeModal = document.getElementById("incomeModalBackdrop");
+function renderIncomeList(){
+  const list = document.getElementById("incomeList");
+  const items = [...budgetIncomes].sort((a,b)=> b.timestamp-a.timestamp);
+  list.innerHTML = items.length ? "" : '<div class="doc-sub">No additional income added yet.</div>';
+  items.forEach(inc=>{
+    const row = document.createElement("div");
+    row.className = "note-item";
+    row.style.display = "flex"; row.style.justifyContent = "space-between"; row.style.alignItems = "center";
+    row.innerHTML = `<div><b style="color:var(--green)">+₹${inc.amount}</b> ${inc.note ? "— "+escapeHtml(inc.note) : ""}
+      <div class="np">${new Date(inc.timestamp).toLocaleDateString()}</div></div>`;
+    const delBtn = document.createElement("button");
+    delBtn.className = "icon-btn"; delBtn.textContent = "✕";
+    delBtn.onclick = async ()=>{ await del("budgetIncome", inc.id); await refreshBudget(); renderIncomeList(); };
+    row.appendChild(delBtn);
+    list.appendChild(row);
+  });
+}
+document.getElementById("addIncomeBtn").onclick = ()=>{
+  document.getElementById("incomeAmountInput").value = "";
+  document.getElementById("incomeNoteInput").value = "";
+  renderIncomeList();
+  incomeModal.classList.add("open");
+};
+document.getElementById("cancelIncomeBtn").onclick = ()=> incomeModal.classList.remove("open");
+document.getElementById("saveIncomeBtn").onclick = async ()=>{
+  const amount = parseFloat(document.getElementById("incomeAmountInput").value) || 0;
+  const note = document.getElementById("incomeNoteInput").value.trim();
+  if(amount <= 0){ showToast("Enter a valid amount"); return; }
+  await add("budgetIncome", {amount, note, timestamp:Date.now()});
+  document.getElementById("incomeAmountInput").value = "";
+  document.getElementById("incomeNoteInput").value = "";
+  await refreshBudget();
+  renderIncomeList();
+  showToast(`+₹${amount} added to your budget`);
 };
 
 /* add category modal */
@@ -1486,7 +1564,8 @@ async function renderHomeStats(){
 
   const settings = await getOne("budgetSettings", "main");
   const expenses = await getAll("budgetExpenses");
-  const total = settings ? settings.totalAmount : 0;
+  const extraIncome = (await getAll("budgetIncome")).reduce((s,i)=> s + i.amount, 0);
+  const total = (settings ? settings.totalAmount : 0) + extraIncome;
   const totalSpent = expenses.reduce((s,e)=> s + e.amount, 0);
   document.getElementById("homeStatBudget").textContent =
     total ? `₹${total-totalSpent} balance left` : "Not set up yet";
